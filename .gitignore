@@ -6,3 +6,9 @@
 /snapshot.bin
 /*.jor
 /detlog.txt
+
+# exclude project files
+**.sln
+**.vcxproj
+**.vcxproj.user
+**.vcxproj.filters
