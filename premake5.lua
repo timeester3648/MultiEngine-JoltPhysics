@@ -18,3 +18,6 @@ project "JoltPhysics"
 	includedirs {
 		"%{IncludeDir.jolt_physics}"
 	}
+
+	filter "toolset:msc"
+		buildoptions { "/Zc:__cplusplus", "/Gm-", "/MP", "/nologo", "/FC", "/fp:except-", "/Zc:inline", "/GR-" }
