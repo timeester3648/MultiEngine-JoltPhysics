@@ -86,9 +86,9 @@ For more information see the [Architecture and API documentation](https://jrouwe
 
 ## Supported Platforms
 
-* Windows (VS2019, VS2022) x86/x64/ARM/ARM64 (Desktop/UWP)
+* Windows (VS2019, VS2022) x86/x64/ARM32/ARM64 (Desktop/UWP)
 * Linux (tested on Ubuntu 22.04) x64/ARM64
-* Android (tested on Android 10) x64/ARM64
+* Android (tested on Android 14) x86/x64/ARM32/ARM64
 * Platform Blue (a popular game console) x64
 * macOS (tested on Monterey) x64/ARM64
 * iOS (tested on iOS 15) x64/ARM64
@@ -106,7 +106,7 @@ For more information see the [Architecture and API documentation](https://jrouwe
 * It doesn't make use of compiler generated RTTI or exceptions.
 * If you want to run on Platform Blue you'll need to provide your own build environment and PlatformBlue.h file due to NDA requirements (see Core.h for further info).
 
-For build instructions go to the [Build](Build/README.md) section. When upgrading from an older version of the library go to the [API Changes](Docs/APIChanges.md) section.
+For build instructions go to the [Build](Build/README.md) section. When upgrading from an older version of the library go to the [Release Notes](Docs/ReleaseNotes.md) or [API Changes](Docs/APIChanges.md) sections.
 
 ## Folder Structure
 
@@ -132,7 +132,6 @@ For build instructions go to the [Build](Build/README.md) section. When upgradin
 
 ## Integrations in Other Engines
 
-* [ezEngine](https://github.com/ezEngine/ezEngine)
 * [Godot](https://github.com/godot-jolt/godot-jolt)
 * [Source Engine](https://github.com/Joshua-Ashton/VPhysics-Jolt)
 
