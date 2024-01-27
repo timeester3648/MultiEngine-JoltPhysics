@@ -203,10 +203,12 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/BroadPhaseBruteForce.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/BroadPhaseBruteForce.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/BroadPhaseLayer.h
+	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/BroadPhaseLayerInterfaceMask.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/BroadPhaseLayerInterfaceTable.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/BroadPhaseQuadTree.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/BroadPhaseQuadTree.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/BroadPhaseQuery.h
+	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/ObjectVsBroadPhaseLayerFilterMask.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/ObjectVsBroadPhaseLayerFilterTable.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/QuadTree.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/BroadPhase/QuadTree.h
@@ -220,6 +222,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideConvexVsTriangles.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollidePointResult.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideShape.h
+	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideSoftBodyVerticesVsTriangles.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideSphereVsTriangles.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollideSphereVsTriangles.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/CollisionCollector.h
@@ -235,6 +238,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/GroupFilter.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/GroupFilterTable.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/GroupFilterTable.h
+	${JOLT_PHYSICS_ROOT}/Physics/Collision/InternalEdgeRemovingCollector.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/ManifoldBetweenTwoFaces.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/ManifoldBetweenTwoFaces.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/NarrowPhaseQuery.cpp
@@ -242,6 +246,7 @@ set(JOLT_PHYSICS_SRC_FILES
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/NarrowPhaseStats.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/NarrowPhaseStats.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/ObjectLayer.h
+	${JOLT_PHYSICS_ROOT}/Physics/Collision/ObjectLayerPairFilterMask.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/ObjectLayerPairFilterTable.h
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/PhysicsMaterial.cpp
 	${JOLT_PHYSICS_ROOT}/Physics/Collision/PhysicsMaterial.h
@@ -593,6 +598,14 @@ else()
 		if (USE_FMADD AND NOT CROSS_PLATFORM_DETERMINISTIC)
 			target_compile_options(Jolt PUBLIC -mfma)
 		endif()
+
+		# On 32-bit builds we need to default to using SSE instructions, the x87 FPU instructions have higher intermediate precision
+		# which will cause problems in the collision detection code (the effect is similar to leaving FMA on, search for
+		# JPH_PRECISE_MATH_ON for the locations where this is a problem).
+		if (NOT MSVC)
+			target_compile_options(Jolt PUBLIC -mfpmath=sse)
+		endif()
+
 		EMIT_X86_INSTRUCTION_SET_DEFINITIONS()
 	endif()
 endif()

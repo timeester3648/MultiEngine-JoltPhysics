@@ -79,11 +79,13 @@ public:
 	/// Check if this body is a sensor.
 	inline bool				IsSensor() const												{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::IsSensor)) != 0; }
 
-	// If this sensor detects static objects entering it. Note that the sensor must be kinematic and active for it to detect static objects.
-	inline void				SetSensorDetectsStatic(bool inDetectsStatic)					{ JPH_ASSERT(IsRigidBody()); if (inDetectsStatic) mFlags.fetch_or(uint8(EFlags::SensorDetectsStatic), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::SensorDetectsStatic)), memory_order_relaxed); }
+	/// If kinematic objects can generate contact points against other kinematic or static objects.
+	/// Note that turning this on can be CPU intensive as much more collision detection work will be done without any effect on the simulation (kinematic objects are not affected by other kinematic/static objects).
+	/// This can be used to make sensors detect static objects. Note that the sensor must be kinematic and active for it to detect static objects.
+	inline void				SetCollideKinematicVsNonDynamic(bool inCollide)					{ JPH_ASSERT(IsRigidBody()); if (inCollide) mFlags.fetch_or(uint8(EFlags::CollideKinematicVsNonDynamic), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::CollideKinematicVsNonDynamic)), memory_order_relaxed); }
 
-	/// Check if this sensor detects static objects entering it.
-	inline bool				SensorDetectsStatic() const										{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::SensorDetectsStatic)) != 0; }
+	/// Check if kinematic objects can generate contact points against other kinematic or static objects.
+	inline bool				GetCollideKinematicVsNonDynamic() const							{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::CollideKinematicVsNonDynamic)) != 0; }
 
 	/// If PhysicsSettings::mUseManifoldReduction is true, this allows turning off manifold reduction for this specific body.
 	/// Manifold reduction by default will combine contacts with similar normals that come from different SubShapeIDs (e.g. different triangles in a mesh shape or different compound shapes).
@@ -96,6 +98,21 @@ public:
 
 	/// Checks if the combination of this body and inBody2 should use manifold reduction
 	inline bool				GetUseManifoldReductionWithBody(const Body &inBody2) const		{ return ((mFlags.load(memory_order_relaxed) & inBody2.mFlags.load(memory_order_relaxed)) & uint8(EFlags::UseManifoldReduction)) != 0; }
+
+	/// Set to indicate that the gyroscopic force should be applied to this body (aka Dzhanibekov effect, see https://en.wikipedia.org/wiki/Tennis_racket_theorem)
+	inline void				SetApplyGyroscopicForce(bool inApply)							{ JPH_ASSERT(IsRigidBody()); if (inApply) mFlags.fetch_or(uint8(EFlags::ApplyGyroscopicForce), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::ApplyGyroscopicForce)), memory_order_relaxed); }
+
+	/// Check if the gyroscopic force is being applied for this body
+	inline bool				GetApplyGyroscopicForce() const									{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::ApplyGyroscopicForce)) != 0; }
+
+	/// Set to indicate that extra effort should be made to try to remove ghost contacts (collisions with internal edges of a mesh). This is more expensive but makes bodies move smoother over a mesh with convex edges.
+	inline void				SetEnhancedInternalEdgeRemoval(bool inApply)					{ JPH_ASSERT(IsRigidBody()); if (inApply) mFlags.fetch_or(uint8(EFlags::EnhancedInternalEdgeRemoval), memory_order_relaxed); else mFlags.fetch_and(uint8(~uint8(EFlags::EnhancedInternalEdgeRemoval)), memory_order_relaxed); }
+
+	/// Check if enhanced internal edge removal is turned on
+	inline bool				GetEnhancedInternalEdgeRemoval() const							{ return (mFlags.load(memory_order_relaxed) & uint8(EFlags::EnhancedInternalEdgeRemoval)) != 0; }
+
+	/// Checks if the combination of this body and inBody2 should use enhanced internal edge removal
+	inline bool				GetEnhancedInternalEdgeRemovalWithBody(const Body &inBody2) const { return ((mFlags.load(memory_order_relaxed) | inBody2.mFlags.load(memory_order_relaxed)) & uint8(EFlags::EnhancedInternalEdgeRemoval)) != 0; }
 
 	/// Get the bodies motion type.
 	inline EMotionType		GetMotionType() const											{ return mMotionType; }
@@ -117,6 +134,9 @@ public:
 	/// If this body can go to sleep. Note that disabling sleeping on a sleeping object wil not wake it up.
 	bool					GetAllowSleeping() const										{ return mMotionProperties->mAllowSleeping; }
 	void					SetAllowSleeping(bool inAllow);
+
+	/// Resets the sleep timer. This does not wake up the body if it is sleeping, but allows resetting the system that detects when a body is sleeping.
+	inline void				ResetSleepTimer();
 
 	/// Friction (dimensionless number, usually between 0 and 1, 0 = no friction, 1 = friction force equals force that presses the two bodies together). Note that bodies can have negative friction but the combined friction (see PhysicsSystem::SetCombineFriction) should never go below zero.
 	inline float			GetFriction() const												{ return mFriction; }
@@ -283,7 +303,7 @@ public:
 	void					CalculateWorldSpaceBoundsInternal();
 
 	/// Function to update body's position (should only be called by the BodyInterface since it also requires updating the broadphase)
-	void					SetPositionAndRotationInternal(RVec3Arg inPosition, QuatArg inRotation, bool inResetSleepTestSpheres = true);
+	void					SetPositionAndRotationInternal(RVec3Arg inPosition, QuatArg inRotation, bool inResetSleepTimer = true);
 
 	/// Updates the center of mass and optionally mass propertes after shifting the center of mass or changes to the shape (should only be called by the BodyInterface since it also requires updating the broadphase)
 	/// @param inPreviousCenterOfMass Center of mass of the shape before the alterations
@@ -317,15 +337,16 @@ private:
 	explicit				Body(bool);														///< Alternative constructor that initializes all members
 
 	inline void				GetSleepTestPoints(RVec3 *outPoints) const;						///< Determine points to test for checking if body is sleeping: COM, COM + largest bounding box axis, COM + second largest bounding box axis
-	inline void				ResetSleepTestSpheres();										///< Reset spheres to current position as returned by GetSleepTestPoints
 
 	enum class EFlags : uint8
 	{
-		IsSensor				= 1 << 0,													///< If this object is a sensor. A sensor will receive collision callbacks, but will not cause any collision responses and can be used as a trigger volume.
-		SensorDetectsStatic		= 1 << 1,													///< If this sensor detects static objects entering it.
-		IsInBroadPhase			= 1 << 2,													///< Set this bit to indicate that the body is in the broadphase
-		InvalidateContactCache	= 1 << 3,													///< Set this bit to indicate that all collision caches for this body are invalid, will be reset the next simulation step.
-		UseManifoldReduction	= 1 << 4,													///< Set this bit to indicate that this body can use manifold reduction (if PhysicsSettings::mUseManifoldReduction is true)
+		IsSensor						= 1 << 0,											///< If this object is a sensor. A sensor will receive collision callbacks, but will not cause any collision responses and can be used as a trigger volume.
+		CollideKinematicVsNonDynamic	= 1 << 1,											///< If kinematic objects can generate contact points against other kinematic or static objects.
+		IsInBroadPhase					= 1 << 2,											///< Set this bit to indicate that the body is in the broadphase
+		InvalidateContactCache			= 1 << 3,											///< Set this bit to indicate that all collision caches for this body are invalid, will be reset the next simulation step.
+		UseManifoldReduction			= 1 << 4,											///< Set this bit to indicate that this body can use manifold reduction (if PhysicsSettings::mUseManifoldReduction is true)
+		ApplyGyroscopicForce			= 1 << 5,											///< Set this bit to indicate that the gyroscopic force should be applied to this body (aka Dzhanibekov effect, see https://en.wikipedia.org/wiki/Tennis_racket_theorem)
+		EnhancedInternalEdgeRemoval		= 1 << 6,											///< Set this bit to indicate that enhanced internal edge removal should be used for this body (see BodyCreationSettings::mEnhancedInternalEdgeRemoval)
 	};
 
 	// 16 byte aligned

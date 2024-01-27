@@ -81,6 +81,8 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/General/AllowedDOFsTest.h
 	${SAMPLES_ROOT}/Tests/General/BigVsSmallTest.cpp
 	${SAMPLES_ROOT}/Tests/General/BigVsSmallTest.h
+	${SAMPLES_ROOT}/Tests/General/EnhancedInternalEdgeRemovalTest.cpp
+	${SAMPLES_ROOT}/Tests/General/EnhancedInternalEdgeRemovalTest.h
 	${SAMPLES_ROOT}/Tests/General/ShapeFilterTest.cpp
 	${SAMPLES_ROOT}/Tests/General/ShapeFilterTest.h
 	${SAMPLES_ROOT}/Tests/General/CenterOfMassTest.cpp
@@ -111,6 +113,8 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/General/FunnelTest.h
 	${SAMPLES_ROOT}/Tests/General/GravityFactorTest.cpp
 	${SAMPLES_ROOT}/Tests/General/GravityFactorTest.h
+	${SAMPLES_ROOT}/Tests/General/GyroscopicForceTest.cpp
+	${SAMPLES_ROOT}/Tests/General/GyroscopicForceTest.h
 	${SAMPLES_ROOT}/Tests/General/HeavyOnLightTest.cpp
 	${SAMPLES_ROOT}/Tests/General/HeavyOnLightTest.h
 	${SAMPLES_ROOT}/Tests/General/HighSpeedTest.cpp
@@ -179,6 +183,10 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyStressTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyUpdatePositionTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyUpdatePositionTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyVertexRadiusTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyVertexRadiusTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyVsFastMovingTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyVsFastMovingTest.h
 	${SAMPLES_ROOT}/Tests/Test.cpp
 	${SAMPLES_ROOT}/Tests/Test.h
 	${SAMPLES_ROOT}/Tests/Tools/LoadSnapshotTest.cpp
@@ -243,6 +251,8 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/Vehicle/VehicleConstraintTest.h
 	${SAMPLES_ROOT}/Tests/Vehicle/VehicleSixDOFTest.cpp
 	${SAMPLES_ROOT}/Tests/Vehicle/VehicleSixDOFTest.h
+	${SAMPLES_ROOT}/Tests/Vehicle/VehicleStressTest.cpp
+	${SAMPLES_ROOT}/Tests/Vehicle/VehicleStressTest.h
 	${SAMPLES_ROOT}/Tests/Vehicle/VehicleTest.cpp
 	${SAMPLES_ROOT}/Tests/Vehicle/VehicleTest.h
 	${SAMPLES_ROOT}/Tests/Water/WaterShapeTest.cpp

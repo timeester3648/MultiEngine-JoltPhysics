@@ -6,19 +6,19 @@ env:
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, 4.x ]
     paths-ignore:
       - 'Docs/**'
       - '**.md'
   pull_request:
-    branches: [ master ]
+    branches: [ master, 4.x ]
     paths-ignore:
       - 'Docs/**'
       - '**.md'
 
 jobs:
   linux:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     name: Linux Determinism Check
 
     steps:
@@ -95,7 +95,7 @@ jobs:
       run: ./PerformanceTest -q=LinearCast -t=2 -s=Ragdoll -validate_hash=${RAGDOLL_HASH}
 
   arm:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     name: ARM Determinism Check
     steps:
     - name: Checkout Code
