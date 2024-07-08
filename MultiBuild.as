@@ -19,7 +19,7 @@ void main(MultiBuild::Workspace& workspace) {
 	});
 
 	{
-		MultiBuild::ScopedFilter _(workspace, "project.compiler:VisualCpp");
+		MultiBuild::ScopedFilter _(project, "project.compiler:VisualCpp");
 		properties.build_options({ "/Zc:__cplusplus", "/Gm-", "/MP", "/nologo", "/FC", "/fp:except-", "/Zc:inline", "/GR-" });
 	}
 }
