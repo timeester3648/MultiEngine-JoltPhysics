@@ -5,6 +5,7 @@
 #pragma once
 
 #include <Jolt/Physics/Character/CharacterBase.h>
+#include <Jolt/Physics/Collision/ObjectLayer.h>
 #include <Jolt/Physics/EActivation.h>
 
 JPH_NAMESPACE_BEGIN
@@ -103,6 +104,9 @@ public:
 
 	/// Calculate the world transform of the character
 	RMat44								GetWorldTransform(bool inLockBodies = true) const;
+
+	/// Get the layer of the character
+	ObjectLayer							GetLayer() const										{ return mLayer; }
 
 	/// Update the layer of the character
 	void								SetLayer(ObjectLayer inLayer, bool inLockBodies = true);

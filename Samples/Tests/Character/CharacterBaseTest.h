@@ -5,13 +5,17 @@
 #pragma once
 
 #include <Tests/Test.h>
-#include <Jolt/Physics/Character/CharacterBase.h>
+#include <Jolt/Physics/Character/Character.h>
+#include <Jolt/Physics/Character/CharacterVirtual.h>
 
 // Base class for the character tests, initializes the test scene.
 class CharacterBaseTest : public Test
 {
 public:
 	JPH_DECLARE_RTTI_VIRTUAL(JPH_NO_EXPORT, CharacterBaseTest)
+
+	// Destructor
+	virtual					~CharacterBaseTest() override;
 
 	// Number used to scale the terrain and camera movement to the scene
 	virtual float			GetWorldScale() const override								{ return 0.2f; }
@@ -66,7 +70,7 @@ protected:
 	static constexpr float	cCharacterRadiusCrouching = 0.3f;
 
 	// Character movement properties
-	inline static bool		sControlMovementDuringJump = true;					///< If false the character cannot change movement direction in mid air
+	inline static bool		sControlMovementDuringJump = true;							///< If false the character cannot change movement direction in mid air
 	inline static float		sCharacterSpeed = 6.0f;
 	inline static float		sJumpSpeed = 4.0f;
 
@@ -83,6 +87,9 @@ protected:
 
 	// Sensor body
 	BodyID					mSensorBody;
+
+	// List of active characters in the scene so they can collide
+	CharacterVsCharacterCollisionSimple mCharacterVsCharacterCollision;
 
 private:
 	// Shape types
@@ -105,6 +112,9 @@ private:
 	// Scene time (for moving bodies)
 	float					mTime = 0.0f;
 
+	// The camera pivot, recorded before the physics update to align with the drawn world
+	RVec3					mCameraPivot = RVec3::sZero();
+
 	// Moving bodies
 	BodyID					mRotatingBody;
 	BodyID					mRotatingWallBody;
@@ -114,8 +124,14 @@ private:
 	float					mReversingVerticallyMovingVelocity = 1.0f;
 	BodyID					mHorizontallyMovingBody;
 
+	// Moving characters
+	Ref<Character>			mAnimatedCharacter;
+	Ref<CharacterVirtual>	mAnimatedCharacterVirtual;
+
 	// Player input
 	Vec3					mControlInput = Vec3::sZero();
 	bool					mJump = false;
+	bool					mWasJump = false;
 	bool					mSwitchStance = false;
+	bool					mWasSwitchStance = false;
 };

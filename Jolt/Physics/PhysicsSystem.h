@@ -20,6 +20,7 @@ class JobSystem;
 class StateRecorder;
 class TempAllocator;
 class PhysicsStepListener;
+class SoftBodyContactListener;
 
 /// The main class for the physics system. It contains all rigid bodies and simulates them.
 ///
@@ -51,6 +52,10 @@ public:
 	void						SetContactListener(ContactListener *inListener)				{ mContactManager.SetContactListener(inListener); }
 	ContactListener *			GetContactListener() const									{ return mContactManager.GetContactListener(); }
 
+	/// Listener that is notified whenever a contact point between a soft body and another body
+	void						SetSoftBodyContactListener(SoftBodyContactListener *inListener) { mSoftBodyContactListener = inListener; }
+	SoftBodyContactListener *	GetSoftBodyContactListener() const							{ return mSoftBodyContactListener; }
+
 	/// Set the function that combines the friction of two bodies and returns it
 	/// Default method is the geometric mean: sqrt(friction1 * friction2).
 	void						SetCombineFriction(ContactConstraintManager::CombineFunction inCombineFriction) { mContactManager.SetCombineFriction(inCombineFriction); }
@@ -67,16 +72,16 @@ public:
 
 	/// Access to the body interface. This interface allows to to create / remove bodies and to change their properties.
 	const BodyInterface &		GetBodyInterface() const									{ return mBodyInterfaceLocking; }
-	BodyInterface &				GetBodyInterface() 											{ return mBodyInterfaceLocking; }
+	BodyInterface &				GetBodyInterface()											{ return mBodyInterfaceLocking; }
 	const BodyInterface &		GetBodyInterfaceNoLock() const								{ return mBodyInterfaceNoLock; } ///< Version that does not lock the bodies, use with great care!
-	BodyInterface & 			GetBodyInterfaceNoLock()									{ return mBodyInterfaceNoLock; } ///< Version that does not lock the bodies, use with great care!
+	BodyInterface &				GetBodyInterfaceNoLock()									{ return mBodyInterfaceNoLock; } ///< Version that does not lock the bodies, use with great care!
 
 	/// Access to the broadphase interface that allows coarse collision queries
 	const BroadPhaseQuery &		GetBroadPhaseQuery() const									{ return *mBroadPhase; }
 
 	/// Interface that allows fine collision queries against first the broad phase and then the narrow phase.
 	const NarrowPhaseQuery &	GetNarrowPhaseQuery() const									{ return mNarrowPhaseQueryLocking; }
-	const NarrowPhaseQuery & 	GetNarrowPhaseQueryNoLock() const							{ return mNarrowPhaseQueryNoLock; } ///< Version that does not lock the bodies, use with great care!
+	const NarrowPhaseQuery &	GetNarrowPhaseQueryNoLock() const							{ return mNarrowPhaseQueryNoLock; } ///< Version that does not lock the bodies, use with great care!
 
 	/// Add constraint to the world
 	void						AddConstraint(Constraint *inConstraint)						{ mConstraintManager.Add(&inConstraint, 1); }
@@ -139,7 +144,7 @@ public:
 
 	/// Set gravity value
 	void						SetGravity(Vec3Arg inGravity)								{ mGravity = inGravity; }
-	Vec3		 				GetGravity() const											{ return mGravity; }
+	Vec3						GetGravity() const											{ return mGravity; }
 
 	/// Returns a locking interface that won't actually lock the body. Use with great care!
 	inline const BodyLockInterfaceNoLock &	GetBodyLockInterfaceNoLock() const				{ return mBodyLockInterfaceNoLock; }
@@ -280,7 +285,10 @@ private:
 	/// The broadphase does quick collision detection between body pairs
 	BroadPhase *				mBroadPhase = nullptr;
 
-    /// Simulation settings
+	/// The soft body contact listener
+	SoftBodyContactListener *	mSoftBodyContactListener = nullptr;
+
+	/// Simulation settings
 	PhysicsSettings				mPhysicsSettings;
 
 	/// The contact manager resolves all contacts during a simulation step

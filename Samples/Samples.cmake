@@ -15,6 +15,8 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/BroadPhase/BroadPhaseTest.h
 	${SAMPLES_ROOT}/Tests/Character/CharacterBaseTest.cpp
 	${SAMPLES_ROOT}/Tests/Character/CharacterBaseTest.h
+	${SAMPLES_ROOT}/Tests/Character/CharacterPlanetTest.cpp
+	${SAMPLES_ROOT}/Tests/Character/CharacterPlanetTest.h
 	${SAMPLES_ROOT}/Tests/Character/CharacterTest.cpp
 	${SAMPLES_ROOT}/Tests/Character/CharacterTest.h
 	${SAMPLES_ROOT}/Tests/Character/CharacterVirtualTest.cpp
@@ -149,36 +151,32 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/General/WallTest.h
 	${SAMPLES_ROOT}/Tests/General/ActivateDuringUpdateTest.cpp
 	${SAMPLES_ROOT}/Tests/General/ActivateDuringUpdateTest.h
-	${SAMPLES_ROOT}/Tests/Rig/BigWorldTest.cpp
-	${SAMPLES_ROOT}/Tests/Rig/BigWorldTest.h
 	${SAMPLES_ROOT}/Tests/Rig/CreateRigTest.cpp
 	${SAMPLES_ROOT}/Tests/Rig/CreateRigTest.h
-	${SAMPLES_ROOT}/Tests/Rig/KinematicRigTest.cpp
-	${SAMPLES_ROOT}/Tests/Rig/KinematicRigTest.h
-	${SAMPLES_ROOT}/Tests/Rig/LoadSaveBinaryRigTest.cpp
-	${SAMPLES_ROOT}/Tests/Rig/LoadSaveBinaryRigTest.h
-	${SAMPLES_ROOT}/Tests/Rig/LoadSaveRigTest.cpp
-	${SAMPLES_ROOT}/Tests/Rig/LoadSaveRigTest.h
-	${SAMPLES_ROOT}/Tests/Rig/LoadRigTest.cpp
-	${SAMPLES_ROOT}/Tests/Rig/LoadRigTest.h
-	${SAMPLES_ROOT}/Tests/Rig/PoweredRigTest.cpp
-	${SAMPLES_ROOT}/Tests/Rig/PoweredRigTest.h
-	${SAMPLES_ROOT}/Tests/Rig/RigPileTest.cpp
-	${SAMPLES_ROOT}/Tests/Rig/RigPileTest.h
-	${SAMPLES_ROOT}/Tests/Rig/SkeletonMapperTest.cpp
-	${SAMPLES_ROOT}/Tests/Rig/SkeletonMapperTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyBendConstraintTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyBendConstraintTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyContactListenerTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyContactListenerTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyCustomUpdateTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyCustomUpdateTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyForceTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyForceTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyFrictionTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyFrictionTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyGravityFactorTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyGravityFactorTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyKinematicTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyKinematicTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyLRAConstraintTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyLRAConstraintTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyPressureTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyPressureTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyRestitutionTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyRestitutionTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyShapesTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyShapesTest.h
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodySkinnedConstraintTest.cpp
+	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodySkinnedConstraintTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyStressTest.cpp
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyStressTest.h
 	${SAMPLES_ROOT}/Tests/SoftBody/SoftBodyUpdatePositionTest.cpp
@@ -191,6 +189,8 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/Test.h
 	${SAMPLES_ROOT}/Tests/Tools/LoadSnapshotTest.cpp
 	${SAMPLES_ROOT}/Tests/Tools/LoadSnapshotTest.h
+	${SAMPLES_ROOT}/Tests/ScaledShapes/DynamicScaledShape.cpp
+	${SAMPLES_ROOT}/Tests/ScaledShapes/DynamicScaledShape.h
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledBoxShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledBoxShapeTest.h
 	${SAMPLES_ROOT}/Tests/ScaledShapes/ScaledCapsuleShapeTest.cpp
@@ -255,6 +255,8 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Tests/Vehicle/VehicleStressTest.h
 	${SAMPLES_ROOT}/Tests/Vehicle/VehicleTest.cpp
 	${SAMPLES_ROOT}/Tests/Vehicle/VehicleTest.h
+	${SAMPLES_ROOT}/Tests/Water/BoatTest.cpp
+	${SAMPLES_ROOT}/Tests/Water/BoatTest.h
 	${SAMPLES_ROOT}/Tests/Water/WaterShapeTest.cpp
 	${SAMPLES_ROOT}/Tests/Water/WaterShapeTest.h
 	${SAMPLES_ROOT}/Utils/ContactListenerImpl.cpp
@@ -268,11 +270,33 @@ set(SAMPLES_SRC_FILES
 	${SAMPLES_ROOT}/Utils/SoftBodyCreator.h
 )
 
+if (ENABLE_OBJECT_STREAM)
+	set(SAMPLES_SRC_FILES
+		${SAMPLES_SRC_FILES}
+		${SAMPLES_ROOT}/Tests/Rig/BigWorldTest.cpp
+		${SAMPLES_ROOT}/Tests/Rig/BigWorldTest.h
+		${SAMPLES_ROOT}/Tests/Rig/KinematicRigTest.cpp
+		${SAMPLES_ROOT}/Tests/Rig/KinematicRigTest.h
+		${SAMPLES_ROOT}/Tests/Rig/LoadSaveBinaryRigTest.cpp
+		${SAMPLES_ROOT}/Tests/Rig/LoadSaveBinaryRigTest.h
+		${SAMPLES_ROOT}/Tests/Rig/LoadSaveRigTest.cpp
+		${SAMPLES_ROOT}/Tests/Rig/LoadSaveRigTest.h
+		${SAMPLES_ROOT}/Tests/Rig/LoadRigTest.cpp
+		${SAMPLES_ROOT}/Tests/Rig/LoadRigTest.h
+		${SAMPLES_ROOT}/Tests/Rig/PoweredRigTest.cpp
+		${SAMPLES_ROOT}/Tests/Rig/PoweredRigTest.h
+		${SAMPLES_ROOT}/Tests/Rig/RigPileTest.cpp
+		${SAMPLES_ROOT}/Tests/Rig/RigPileTest.h
+		${SAMPLES_ROOT}/Tests/Rig/SkeletonMapperTest.cpp
+		${SAMPLES_ROOT}/Tests/Rig/SkeletonMapperTest.h
+	)
+endif()
+
 # Group source files
 source_group(TREE ${SAMPLES_ROOT} FILES ${SAMPLES_SRC_FILES})
 
 # Create Samples executable
-add_executable(Samples  ${SAMPLES_SRC_FILES})
+add_executable(Samples ${SAMPLES_SRC_FILES})
 target_include_directories(Samples PUBLIC ${SAMPLES_ROOT})
 target_link_libraries(Samples LINK_PUBLIC TestFramework d3d12.lib shcore.lib)
 

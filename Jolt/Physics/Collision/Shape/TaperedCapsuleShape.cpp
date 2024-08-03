@@ -196,6 +196,7 @@ const ConvexShape::Support *TaperedCapsuleShape::GetSupportFunction(ESupportMode
 		return new (&inBuffer) TaperedCapsule(scaled_top_center, scaled_bottom_center, scaled_top_radius, scaled_bottom_radius, 0.0f);
 
 	case ESupportMode::ExcludeConvexRadius:
+	case ESupportMode::Default:
 		{
 			// Get radii reduced by convex radius
 			float tr = scaled_top_radius - scaled_convex_radius;
@@ -405,15 +406,6 @@ AABox TaperedCapsuleShape::GetInertiaApproximation() const
 	return AABox(Vec3(-avg_radius, mBottomCenter - mBottomRadius, -avg_radius), Vec3(avg_radius, mTopCenter + mTopRadius, avg_radius));
 }
 
-void TaperedCapsuleShape::TransformShape(Mat44Arg inCenterOfMassTransform, TransformedShapeCollector &ioCollector) const
-{
-	Vec3 scale;
-	Mat44 transform = inCenterOfMassTransform.Decompose(scale);
-	TransformedShape ts(RVec3(transform.GetTranslation()), transform.GetRotation().GetQuaternion(), this, BodyID(), SubShapeIDCreator());
-	ts.SetShapeScale(scale.GetSign() * ScaleHelpers::MakeUniformScale(scale.Abs()));
-	ioCollector.AddHit(ts);
-}
-
 void TaperedCapsuleShape::SaveBinaryState(StreamOut &inStream) const
 {
 	ConvexShape::SaveBinaryState(inStream);
@@ -445,6 +437,13 @@ void TaperedCapsuleShape::RestoreBinaryState(StreamIn &inStream)
 bool TaperedCapsuleShape::IsValidScale(Vec3Arg inScale) const
 {
 	return ConvexShape::IsValidScale(inScale) && ScaleHelpers::IsUniformScale(inScale.Abs());
+}
+
+Vec3 TaperedCapsuleShape::MakeScaleValid(Vec3Arg inScale) const
+{
+	Vec3 scale = ScaleHelpers::MakeNonZeroScale(inScale);
+
+	return scale.GetSign() * ScaleHelpers::MakeUniformScale(scale.Abs());
 }
 
 void TaperedCapsuleShape::sRegister()

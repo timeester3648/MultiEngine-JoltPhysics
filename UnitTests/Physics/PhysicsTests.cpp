@@ -448,7 +448,7 @@ TEST_SUITE("PhysicsTests")
 		TestPhysicsApplyForce(c2);
 	}
 
-	// Test angular accelartion for a box by applying torque every frame
+	// Test angular acceleration for a box by applying torque every frame
 	static void TestPhysicsApplyTorque(PhysicsTestContext &ioContext)
 	{
 		const RVec3 cInitialPos(0.0f, 10.0f, 0.0f);
@@ -492,7 +492,7 @@ TEST_SUITE("PhysicsTests")
 		TestPhysicsApplyTorque(c2);
 	}
 
-	// Let a sphere bounce on the floor with restition = 1
+	// Let a sphere bounce on the floor with restitution = 1
 	static void TestPhysicsCollisionElastic(PhysicsTestContext &ioContext)
 	{
 		const float cSimulationTime = 1.0f;
@@ -850,7 +850,7 @@ TEST_SUITE("PhysicsTests")
 		// Simulate a step
 		c.SimulateSingleStep();
 
-		// Check that it has triggered contact points and has bounced from it's initial position (effectively travelling the extra distance to the floor and back for free)
+		// Check that it has triggered contact points and has bounced from it's initial position (effectively traveling the extra distance to the floor and back for free)
 		CHECK(contact_listener.GetEntryCount() == 4); // 2 validates and 2 contacts
 		CHECK(contact_listener.Contains(LoggingContactListener::EType::Validate, box.GetID(), floor.GetID()));
 		CHECK(contact_listener.Contains(LoggingContactListener::EType::Add, box.GetID(), floor.GetID()));
@@ -1133,7 +1133,7 @@ TEST_SUITE("PhysicsTests")
 		// Step the world
 		ioContext.SimulateSingleStep();
 
-		// Other bodies should now be awake and each body should only collide with its neighbour
+		// Other bodies should now be awake and each body should only collide with its neighbor
 		CHECK(activation_listener.GetEntryCount() == cNumBodies - 1);
 		CHECK(contact_listener.GetEntryCount() == 2 * (cNumBodies - 1));
 
@@ -1488,33 +1488,36 @@ TEST_SUITE("PhysicsTests")
 			// Apply a force and torque in 3D
 			Vec3 force(100000, 110000, 120000);
 			box.AddForce(force);
-			Vec3 local_torque(13000, 14000, 15000);
-			box.AddTorque(initial_rotation * local_torque);
+			Vec3 torque(13000, 14000, 15000);
+			box.AddTorque(torque);
 
 			// Simulate
 			c.SimulateSingleStep();
 
 			// Cancel components that should not be allowed by the allowed DOFs
+			Vec3 linear_lock = Vec3::sReplicate(1.0f), angular_lock = Vec3::sReplicate(1.0f);
 			for (uint axis = 0; axis < 3; ++axis)
 			{
 				if ((allowed_dofs & (1 << axis)) == 0)
-					force.SetComponent(axis, 0.0f);
+					linear_lock.SetComponent(axis, 0.0f);
 
 				if ((allowed_dofs & (0b1000 << axis)) == 0)
-					local_torque.SetComponent(axis, 0.0f);
+					angular_lock.SetComponent(axis, 0.0f);
 			}
 
 			// Check resulting linear velocity
 			MassProperties mp = box_shape->GetMassProperties();
-			Vec3 expected_linear_velocity = force / mp.mMass * c.GetDeltaTime();
-			CHECK((force == Vec3::sZero() || expected_linear_velocity.Length() > 1.0f)); // Just to check that we applied a high enough force
+			Vec3 expected_linear_velocity = linear_lock * (force / mp.mMass * c.GetDeltaTime());
+			CHECK((linear_lock == Vec3::sZero() || expected_linear_velocity.Length() > 1.0f)); // Just to check that we applied a high enough force
 			CHECK_APPROX_EQUAL(box.GetLinearVelocity(), expected_linear_velocity);
 			RVec3 expected_position = initial_position + expected_linear_velocity * c.GetDeltaTime();
 			CHECK_APPROX_EQUAL(box.GetPosition(), expected_position);
 
 			// Check resulting angular velocity
-			Vec3 expected_angular_velocity = initial_rotation * (mp.mInertia.Inversed3x3() * local_torque) * c.GetDeltaTime();
-			CHECK((local_torque == Vec3::sZero() || expected_angular_velocity.Length() > 1.0f)); // Just to check that we applied a high enough torque
+			Mat44 inv_inertia = Mat44::sRotation(initial_rotation) * mp.mInertia.Inversed3x3() * Mat44::sRotation(initial_rotation.Conjugated());
+			inv_inertia = Mat44::sScale(angular_lock) * inv_inertia * Mat44::sScale(angular_lock); // Clear row and column for locked axes
+			Vec3 expected_angular_velocity = inv_inertia * torque * c.GetDeltaTime();
+			CHECK((angular_lock == Vec3::sZero() || expected_angular_velocity.Length() > 1.0f)); // Just to check that we applied a high enough torque
 			CHECK_APPROX_EQUAL(box.GetAngularVelocity(), expected_angular_velocity);
 			float expected_angular_velocity_len = expected_angular_velocity.Length();
 			Quat expected_rotation = expected_angular_velocity_len > 0.0f? Quat::sRotation(expected_angular_velocity / expected_angular_velocity_len, expected_angular_velocity_len * c.GetDeltaTime()) * initial_rotation : initial_rotation;
@@ -1567,7 +1570,7 @@ TEST_SUITE("PhysicsTests")
 		public:
 			bool						ShouldSaveBody(const BodyID &inBodyID) const
 			{
-				return find(mIgnoreBodies.cbegin(), mIgnoreBodies.cend(), inBodyID) == mIgnoreBodies.cend();
+				return std::find(mIgnoreBodies.cbegin(), mIgnoreBodies.cend(), inBodyID) == mIgnoreBodies.cend();
 			}
 
 			virtual bool				ShouldSaveBody(const Body &inBody) const override
@@ -1590,7 +1593,7 @@ TEST_SUITE("PhysicsTests")
 			Vec3 gravity = c.GetSystem()->GetGravity();
 			Vec3 upside_down_gravity = -gravity;
 
-  			// Create the ground.
+			// Create the ground.
 			Body &ground = c.CreateFloor();
 
 			// Create two sets of bodies that each overlap
@@ -1783,7 +1786,7 @@ TEST_SUITE("PhysicsTests")
 		shape_settings->AddShape(Vec3(-5, 0, 0), Quat::sIdentity(), box_shape);
 		shape_settings->AddShape(Vec3(0, 0, 5), Quat::sIdentity(), box_shape);
 		shape_settings->AddShape(Vec3(0, 0, -5), Quat::sIdentity(), box_shape);
-		RefConst<StaticCompoundShape> compound_shape = static_cast<const StaticCompoundShape *>(shape_settings->Create().Get().GetPtr());
+		RefConst<StaticCompoundShape> compound_shape = StaticCast<StaticCompoundShape>(shape_settings->Create().Get());
 		SubShapeID sub_shape_ids[] = {
 			compound_shape->GetSubShapeIDFromIndex(0, SubShapeIDCreator()).GetID(),
 			compound_shape->GetSubShapeIDFromIndex(1, SubShapeIDCreator()).GetID(),
