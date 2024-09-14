@@ -3,6 +3,7 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=jrouwe_JoltPhysics&metric=alert_status)](https://sonarcloud.io/dashboard?id=jrouwe_JoltPhysics)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=jrouwe_JoltPhysics&metric=bugs)](https://sonarcloud.io/dashboard?id=jrouwe_JoltPhysics)
 [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=jrouwe_JoltPhysics&metric=code_smells)](https://sonarcloud.io/dashboard?id=jrouwe_JoltPhysics)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=jrouwe_JoltPhysics&metric=coverage)](https://sonarcloud.io/dashboard?id=jrouwe_JoltPhysics)
 
 # Jolt Physics
 
@@ -36,7 +37,9 @@ Why create yet another physics engine? Firstly, it has been a personal learning 
 	* Capsule
 	* Tapered-capsule
 	* Cylinder
+	* Tapered-cylinder
 	* Convex hull
+	* Plane
 	* Compound
 	* Mesh (triangle)
 	* Terrain (height field)
@@ -142,6 +145,7 @@ If you're interested in how Jolt scales with multiple CPUs and compares to other
 
 * C [here](https://github.com/michal-z/zig-gamedev/tree/main/libs/zphysics/libs) and [here](https://github.com/amerkoleci/JoltPhysicsSharp/tree/main/src/joltc)
 * [C#](https://github.com/amerkoleci/JoltPhysicsSharp)
+* [Java](https://github.com/stephengold/jolt-jni)
 * [JavaScript](https://github.com/jrouwe/JoltPhysics.js)
 * [Zig](https://github.com/michal-z/zig-gamedev/tree/main/libs/zphysics)
 

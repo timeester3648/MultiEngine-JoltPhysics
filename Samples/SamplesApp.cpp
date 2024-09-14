@@ -32,7 +32,9 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/TaperedCapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/CylinderShape.h>
+#include <Jolt/Physics/Collision/Shape/TaperedCylinderShape.h>
 #include <Jolt/Physics/Collision/Shape/TriangleShape.h>
+#include <Jolt/Physics/Collision/Shape/PlaneShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/StaticCompoundShape.h>
 #include <Jolt/Physics/Collision/Shape/MutableCompoundShape.h>
@@ -201,11 +203,14 @@ JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SphereShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, TaperedCapsuleShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, CapsuleShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, CylinderShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, TaperedCylinderShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, StaticCompoundShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, MutableCompoundShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, TriangleShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, PlaneShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ConvexHullShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, MeshShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, MeshShapeUserDataTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, HeightFieldShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, DeformedHeightFieldShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, RotatedTranslatedShapeTest)
@@ -218,13 +223,16 @@ static TestNameAndRTTI sShapeTests[] =
 	{ "Capsule Shape",						JPH_RTTI(CapsuleShapeTest) },
 	{ "Tapered Capsule Shape",				JPH_RTTI(TaperedCapsuleShapeTest) },
 	{ "Cylinder Shape",						JPH_RTTI(CylinderShapeTest) },
+	{ "Tapered Cylinder Shape",				JPH_RTTI(TaperedCylinderShapeTest) },
 	{ "Convex Hull Shape",					JPH_RTTI(ConvexHullShapeTest) },
 	{ "Mesh Shape",							JPH_RTTI(MeshShapeTest) },
+	{ "Mesh Shape Per Triangle User Data",	JPH_RTTI(MeshShapeUserDataTest) },
 	{ "Height Field Shape",					JPH_RTTI(HeightFieldShapeTest) },
 	{ "Deformed Height Field Shape",		JPH_RTTI(DeformedHeightFieldShapeTest) },
 	{ "Static Compound Shape",				JPH_RTTI(StaticCompoundShapeTest) },
 	{ "Mutable Compound Shape",				JPH_RTTI(MutableCompoundShapeTest) },
 	{ "Triangle Shape",						JPH_RTTI(TriangleShapeTest) },
+	{ "Plane Shape",						JPH_RTTI(PlaneShapeTest) },
 	{ "Rotated Translated Shape",			JPH_RTTI(RotatedTranslatedShapeTest) },
 	{ "Offset Center Of Mass Shape",		JPH_RTTI(OffsetCenterOfMassShapeTest) }
 };
@@ -234,12 +242,14 @@ JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledBoxShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledCapsuleShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledTaperedCapsuleShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledCylinderShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledTaperedCylinderShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledConvexHullShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledMeshShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledHeightFieldShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledStaticCompoundShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledMutableCompoundShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledTriangleShapeTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledPlaneShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, ScaledOffsetCenterOfMassShapeTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, DynamicScaledShape)
 
@@ -250,12 +260,14 @@ static TestNameAndRTTI sScaledShapeTests[] =
 	{ "Capsule Shape",						JPH_RTTI(ScaledCapsuleShapeTest) },
 	{ "Tapered Capsule Shape",				JPH_RTTI(ScaledTaperedCapsuleShapeTest) },
 	{ "Cylinder Shape",						JPH_RTTI(ScaledCylinderShapeTest) },
+	{ "Tapered Cylinder Shape",				JPH_RTTI(ScaledTaperedCylinderShapeTest) },
 	{ "Convex Hull Shape",					JPH_RTTI(ScaledConvexHullShapeTest) },
 	{ "Mesh Shape",							JPH_RTTI(ScaledMeshShapeTest) },
 	{ "Height Field Shape",					JPH_RTTI(ScaledHeightFieldShapeTest) },
 	{ "Static Compound Shape",				JPH_RTTI(ScaledStaticCompoundShapeTest) },
 	{ "Mutable Compound Shape",				JPH_RTTI(ScaledMutableCompoundShapeTest) },
 	{ "Triangle Shape",						JPH_RTTI(ScaledTriangleShapeTest) },
+	{ "Plane Shape",						JPH_RTTI(ScaledPlaneShapeTest) },
 	{ "Offset Center Of Mass Shape",		JPH_RTTI(ScaledOffsetCenterOfMassShapeTest) },
 	{ "Dynamic Scaled Shape",				JPH_RTTI(DynamicScaledShape) }
 };
@@ -557,7 +569,8 @@ SamplesApp::SamplesApp()
 			mDebugUI->CreateSlider(probe_options, "Scale X", mShapeScale.GetX(), -5.0f, 5.0f, 0.1f, [this](float inValue) { mShapeScale.SetX(inValue); });
 			mDebugUI->CreateSlider(probe_options, "Scale Y", mShapeScale.GetY(), -5.0f, 5.0f, 0.1f, [this](float inValue) { mShapeScale.SetY(inValue); });
 			mDebugUI->CreateSlider(probe_options, "Scale Z", mShapeScale.GetZ(), -5.0f, 5.0f, 0.1f, [this](float inValue) { mShapeScale.SetZ(inValue); });
-			mDebugUI->CreateComboBox(probe_options, "Back Face Cull", { "On", "Off" }, (int)mBackFaceMode, [this](int inItem) { mBackFaceMode = (EBackFaceMode)inItem; });
+			mDebugUI->CreateComboBox(probe_options, "Back Face Cull Triangles", { "On", "Off" }, (int)mBackFaceModeTriangles, [this](int inItem) { mBackFaceModeTriangles = (EBackFaceMode)inItem; });
+			mDebugUI->CreateComboBox(probe_options, "Back Face Cull Convex", { "On", "Off" }, (int)mBackFaceModeConvex, [this](int inItem) { mBackFaceModeConvex = (EBackFaceMode)inItem; });
 			mDebugUI->CreateComboBox(probe_options, "Active Edge Mode", { "Only Active", "All" }, (int)mActiveEdgeMode, [this](int inItem) { mActiveEdgeMode = (EActiveEdgeMode)inItem; });
 			mDebugUI->CreateComboBox(probe_options, "Collect Faces Mode", { "Collect Faces", "No Faces" }, (int)mCollectFacesMode, [this](int inItem) { mCollectFacesMode = (ECollectFacesMode)inItem; });
 			mDebugUI->CreateSlider(probe_options, "Max Separation Distance", mMaxSeparationDistance, 0.0f, 5.0f, 0.1f, [this](float inValue) { mMaxSeparationDistance = inValue; });
@@ -1122,7 +1135,8 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 
 			// Create settings
 			RayCastSettings settings;
-			settings.mBackFaceMode = mBackFaceMode;
+			settings.mBackFaceModeTriangles = mBackFaceModeTriangles;
+			settings.mBackFaceModeConvex = mBackFaceModeConvex;
 			settings.mTreatConvexAsSolid = mTreatConvexAsSolid;
 
 			// Cast ray
@@ -1257,7 +1271,7 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 			// Create settings
 			CollideShapeSettings settings;
 			settings.mActiveEdgeMode = mActiveEdgeMode;
-			settings.mBackFaceMode = mBackFaceMode;
+			settings.mBackFaceMode = mBackFaceModeTriangles;
 			settings.mCollectFacesMode = mCollectFacesMode;
 			settings.mMaxSeparationDistance = mMaxSeparationDistance;
 
@@ -1346,8 +1360,8 @@ bool SamplesApp::CastProbe(float inProbeLength, float &outFraction, RVec3 &outPo
 			ShapeCastSettings settings;
 			settings.mUseShrunkenShapeAndConvexRadius = mUseShrunkenShapeAndConvexRadius;
 			settings.mActiveEdgeMode = mActiveEdgeMode;
-			settings.mBackFaceModeTriangles = mBackFaceMode;
-			settings.mBackFaceModeConvex = mBackFaceMode;
+			settings.mBackFaceModeTriangles = mBackFaceModeTriangles;
+			settings.mBackFaceModeConvex = mBackFaceModeConvex;
 			settings.mReturnDeepestPoint = mReturnDeepestPoint;
 			settings.mCollectFacesMode = mCollectFacesMode;
 
@@ -2505,7 +2519,6 @@ void SamplesApp::GetInitialCamera(CameraState &ioState) const
 	// Default if the test doesn't override it
 	ioState.mPos = GetWorldScale() * RVec3(30, 10, 30);
 	ioState.mForward = -Vec3(ioState.mPos).Normalized();
-	ioState.mFarPlane = 1000.0f;
 
 	mTest->GetInitialCamera(ioState);
 }
