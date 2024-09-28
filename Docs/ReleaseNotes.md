@@ -8,10 +8,12 @@ For breaking API changes see [this document](https://github.com/jrouwe/JoltPhysi
 
 * Added PlaneShape. An infinite plane. Negative half space is considered solid.
 * Added TaperedCylinderShape. A cylinder with different top and bottom radii.
+* Added EmptyShape. A shape that collides with nothing and that can be used as a placeholder or for dummy bodies.
 * Use MeshShapeSettings::mPerTriangleUserData at about 25% memory increase to get per triangle user data through MeshShape::GetTriangleUserData
 * Added Shape::GetLeafShape function to be able to get a leaf shape given a sub shape ID
 * Added HeightFieldShape::GetSubShapeCoordinates to get the triangle coordinates of a particular sub shape ID
 * Split back face mode between convex/triangles for ray casts. This allows you to e.g. have meshes that do give back face hits while convex shapes don't.
+* SoftBodyManifold now returns sensor contacts separately. Before this change, there was a limit of a single colliding body per soft body vertex. If the closest body happened to be a sensor this effectively disabled the collision with the world and caused artifacts. We can now also detect multiple sensor contacts per soft body and they are returned through a new interface SoftBodyManifold::GetSensorContactBodyID.
 
 ### Bug fixes
 
@@ -19,6 +21,9 @@ For breaking API changes see [this document](https://github.com/jrouwe/JoltPhysi
 * Fixed an issue where the bounding volume of a HeightFieldShape was not properly adjusted when calling SetHeights leading to missed collisions.
 * Workaround for CMake error 'CMake Error: No output files for WriteBuild!' when using the 'Ninja Multi-Config' generator.
 * When a height field was created where SampleCount / BlockSize is not a power of 2 and a soft body touched the right or bottom border of the height field, the application would crash.
+* Fixed a link error 'ld: error: undefined symbol: pthread_create' on FreeBSD
+* Fixed missing files ConfigurationString.h and SoftBodyUpdateContext.h when running `cmake --install`
+* Fixed unresolved symbol '__emutls_v._ZN3JPH11PhysicsLock6sLocksE' when compiling Jolt as a shared library with MinGW
 
 ## v5.1.0
 

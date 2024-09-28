@@ -210,7 +210,7 @@
 #ifdef JPH_SHARED_LIBRARY
 	#ifdef JPH_BUILD_SHARED_LIBRARY
 		// While building the shared library, we must export these symbols
-		#ifdef JPH_PLATFORM_WINDOWS
+		#if defined(JPH_PLATFORM_WINDOWS) && !defined(JPH_COMPILER_MINGW)
 			#define JPH_EXPORT __declspec(dllexport)
 		#else
 			#define JPH_EXPORT __attribute__ ((visibility ("default")))
@@ -221,7 +221,7 @@
 		#endif
 	#else
 		// When linking against Jolt, we must import these symbols
-		#ifdef JPH_PLATFORM_WINDOWS
+		#if defined(JPH_PLATFORM_WINDOWS) && !defined(JPH_COMPILER_MINGW)
 			#define JPH_EXPORT __declspec(dllimport)
 		#else
 			#define JPH_EXPORT __attribute__ ((visibility ("default")))
@@ -576,6 +576,17 @@ static_assert(sizeof(void *) == (JPH_CPU_ADDRESS_BITS == 64? 8 : 4), "Invalid si
 		__pragma(float_control(pop))
 #else
 	#error Undefined
+#endif
+
+// Check if Thread Sanitizer is enabled
+#ifdef __has_feature
+	#if __has_feature(thread_sanitizer)
+		#define JPH_TSAN_ENABLED
+	#endif
+#else
+	#ifdef __SANITIZE_THREAD__
+		#define JPH_TSAN_ENABLED
+	#endif
 #endif
 
 JPH_NAMESPACE_END
