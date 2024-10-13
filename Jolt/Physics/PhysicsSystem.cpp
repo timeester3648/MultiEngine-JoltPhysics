@@ -830,6 +830,9 @@ static void sFinalizeContactAllocator(PhysicsUpdateContext::Step &ioStep, const 
 	ioStep.mContext->mErrors.fetch_or((uint32)inAllocator.mErrors, memory_order_relaxed);
 }
 
+// Disable TSAN for this function. It detects a false positive race condition on mBodyPairs.
+// We have written mBodyPairs before doing mWriteIdx++ and we check mWriteIdx before reading mBodyPairs, so this should be safe.
+JPH_TSAN_NO_SANITIZE
 void PhysicsSystem::JobFindCollisions(PhysicsUpdateContext::Step *ioStep, int inJobIndex)
 {
 #ifdef JPH_ENABLE_ASSERTS
@@ -2654,7 +2657,7 @@ void PhysicsSystem::SaveState(StateRecorder &inStream, EStateRecorderState inSta
 		mConstraintManager.SaveState(inStream, inFilter);
 }
 
-bool PhysicsSystem::RestoreState(StateRecorder &inStream)
+bool PhysicsSystem::RestoreState(StateRecorder &inStream, const StateRecorderFilter *inFilter)
 {
 	JPH_PROFILE_FUNCTION();
 
@@ -2673,17 +2676,20 @@ bool PhysicsSystem::RestoreState(StateRecorder &inStream)
 			return false;
 
 		// Update bounding boxes for all bodies in the broadphase
-		Array<BodyID> bodies;
-		for (const Body *b : mBodyManager.GetBodies())
-			if (BodyManager::sIsValidBodyPointer(b) && b->IsInBroadPhase())
-				bodies.push_back(b->GetID());
-		if (!bodies.empty())
-			mBroadPhase->NotifyBodiesAABBChanged(&bodies[0], (int)bodies.size());
+		if (inStream.IsLastPart())
+		{
+			Array<BodyID> bodies;
+			for (const Body *b : mBodyManager.GetBodies())
+				if (BodyManager::sIsValidBodyPointer(b) && b->IsInBroadPhase())
+					bodies.push_back(b->GetID());
+			if (!bodies.empty())
+				mBroadPhase->NotifyBodiesAABBChanged(&bodies[0], (int)bodies.size());
+		}
 	}
 
 	if (uint8(state) & uint8(EStateRecorderState::Contacts))
 	{
-		if (!mContactManager.RestoreState(inStream))
+		if (!mContactManager.RestoreState(inStream, inFilter))
 			return false;
 	}
 
