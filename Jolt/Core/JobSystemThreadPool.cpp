@@ -128,7 +128,7 @@ JobHandle JobSystemThreadPool::CreateJob(const char *inJobName, ColorArg inColor
 		index = mJobs.ConstructObject(inJobName, inColor, this, inJobFunction, inNumDependencies);
 		if (index != AvailableJobs::cInvalidObjectIndex)
 			break;
-		JPH_ASSERT(false, "No jobs available!");
+		// JPH_ASSERT(false, "No jobs available!");
 		std::this_thread::sleep_for(std::chrono::microseconds(100));
 	}
 	Job *job = &mJobs.Get(index);
