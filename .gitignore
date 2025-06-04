@@ -6,6 +6,8 @@
 /snapshot.bin
 /*.jor
 /detlog.txt
+/Assets/Shaders/VK/*.spv
+/Assets/Shaders/MTL/*.metallib
 
 # exclude project files
 **.sln

@@ -2,7 +2,98 @@
 
 For breaking API changes see [this document](https://github.com/jrouwe/JoltPhysics/blob/master/Docs/APIChanges.md).
 
-## Unreleased changes
+## Unreleased Changes
+
+### New functionality
+
+* Added Cosserat rods to soft bodies. This is a stick constraint with an orientation that can be used to attach geometry. Can be used e.g. to simulate vegetation in a cheap way. See the new `SoftBodyCosseratRodConstraintTest` demo.
+* Added ability to drive hinge constraints with `Ragdoll::DriveToPoseUsingMotors`. This also adds `HingeConstraint::SetTargetOrientationBS` which sets the target angle in body space.
+* Added `JPH_USE_EXTERNAL_PROFILE` cmake option that allows overriding the behavior of the profile macros.
+* Added `SoftBodyCreationSettings::mFacesDoubleSided` which treats the faces of the soft body as double sided. This can be used to make e.g. flags double sided.
+
+### Bug Fixes
+
+* WheelSettingsTV and WheelSettingsWV were not serializing their base class members.
+* The remap tables in `SoftBodySharedSettings::OptimizationResults`` mapped from new to old index instead of from old to new as was documented. The maps now behave as documented.
+* Fixed an issue where soft body bend constraints could be created with identical vertices. This led to an assert triggering.
+* Fixed infinite recursion when colliding a `TriangleShape` vs a `TriangleShape`.
+* 32-bit MinGW g++ doesn't call the correct overload for the new operator when a type is 16 bytes aligned. This could cause unaligned read access violations.
+* Fixed compiling in double precision and fixed issues with floating point contraction that caused unit test failures on LoongArch architecture.
+* Added an epsilon to the `CastRay` / `CastShape` early out condition to avoid dividing by a very small number and overflowing to INF. This can cause a float overflow exception.
+* Fixed Samples requiring Vulkan extension `VK_EXT_device_address_binding_report` without checking if it is available.
+* Fixed Vulkan warning in Samples: VkSemaphore is being signaled by VkQueue but it may still be in use by VkSwapchainKHR.
+
+## v5.3.0
+
+### New functionality
+
+#### Samples
+
+* The Samples and JoltViewer can run on Linux using Vulkan. Make sure to install the Vulkan SDK before compiling (see: `Build/ubuntu24_install_vulkan_sdk.sh`).
+* The Samples and JoltViewer can run on macOS using Metal.
+
+#### MeshShape
+
+* `MeshShape`s of up to 110M triangles are possible now, but the actual maximum is very dependent on how the triangles in the mesh are connected.
+* Optimized creation of `MeshShape`. Improves build speed by about 25% and reduces number of allocations by a factor of 1000. Allocations caused contention when building meshes from multiple threads.
+* Added `MeshShapeSettings::mBuildQuality` which allows selecting between faster mesh creation or faster run time performance.
+
+#### Character
+
+* Added `OnContactPersisted`, `OnContactRemoved`, `OnCharacterContactPersisted` and `OnCharacterContactRemoved` functions on `CharacterContactListener` to better match the interface of `ContactListener`.
+* Every `CharacterVirtual` now has a `CharacterID`. This ID can be used to identify the character after removal and is used to make the simulation deterministic in case a character collides with multiple other virtual characters.
+* Added support for `CharacterVirtual` to override the inner rigid body ID. This can be used to make the simulation deterministic in e.g. client/server setups.
+
+#### Collision Detection
+
+* Added `PhysicsSystem::SetSimShapeFilter`. This allows filtering out collisions between sub shapes within a body and can for example be used to have a single body that contains a low detail simulation shape an a high detail collision query shape. An example of a body that's both a sensor and a rigid body can be found in `ContactListenerTest`.
+* Added `PhysicsSystem::SetSimCollideBodyVsBody`. This allows overriding the collision detection between two bodies. It can be used to only store the 1st hit for sensor collisions. This makes sensors cheaper if you only need to know if there is an overlap or not. An example can be found in `SimCollideBodyVsBodyTest`.
+* Added `ClosestHitPerBodyCollisionCollector` which will report the closest / deepest hit per body that the collision query collides with.
+* Added overridable `CollisionCollector::OnBodyEnd` that is called after all hits for a body have been processed when collecting hits through `NarrowPhaseQuery`.
+
+#### New Platforms
+
+* Added support for RISC-V, LoongArch and PowerPC (Little Endian) CPUs.
+* Added support for WASM64.
+
+#### Various
+
+* Removed the use of `std::unordered_map` and `std::unordered_set` and replaced them with our own implementation: `UnorderedMap` and `UnorderedSet`.
+* Added `MotionProperties::ScaleToMass`. This lets you easily change the mass and inertia tensor of a body after creation.
+* Split up `Body::ApplyBuoyancyImpulse` into `Body::GetSubmergedVolume` and `Body::ApplyBuoyancyImpulse`. This allows you to use the calculated submerged volume for other purposes.
+* Added binary serialization to `SkeletalAnimation`.
+* Added the ability to add a sub shape at a specified index in a `MutableCompoundShape` rather than at the end.
+* Added `STLLocalAllocator` which is an allocator that can be used in e.g. the `Array` class. It keeps a fixed size buffer for N elements and only when it runs out of space falls back to the heap.
+* Added the following constants on PhysicsSystem: `cMaxBodiesLimit`, `cMaxBodyPairsLimit` and `cMaxContactConstraintsLimit`. These constants are the max allowable values for `PhysicsSystem::Init`. Exceeding these will trigger an assert and the system will clamp the values. Note that on a 32 bit system, you'll run out of memory before you reach these values.
+
+### Bug fixes
+
+* Fixed bodies gaining more energy than intended due to restitution. E.g. A restitution of 1 could lead to bodies bouncing ever higher.
+* `BodyInterface::AddForce` applied a force per soft body vertex rather than to the whole body, this resulted in a soft body accelerating much more compared to a rigid body of the same mass.
+* `std::push_heap`/`pop_heap` behave differently on macOS vs Windows/Linux when elements compare equal, this made the cross platform deterministic build not deterministic in some cases.
+* Removing a sub shape from a `MutableCompoundShape` would not update the bounding box if the last shape was removed, which can result in a small performance loss.
+* An empty `MutableCompoundShape` now returns the same local bounding box as `EmptyShape` (a point at (0, 0, 0)). This prevents floating point overflow exceptions.
+* VehicleConstraint would override `Body::SetAllowSleeping` every frame, making it impossible for client code to configure a vehicle that cannot go to sleep.
+* Fixed `CharacterVirtual::Contact::mIsSensorB` not being persisted in `SaveState`.
+* Fixed `CharacterVirtual::Contact::mHadContact` not being true for collisions with sensors. They will still be marked as `mWasDiscarded` to prevent any further interaction.
+* Fixed `Character::SetShape` failing to switch when standing inside a sensor / `Character::PostSimulation` finding a sensor as ground collision.
+* Fixed numerical inaccuracy in penetration depth calculation when `CollideShapeSettings::mMaxSeparationDistance` was set to a really high value (e.g. 1000).
+* Bugfix in `Semaphore::Acquire` for non-windows platform. The count was updated before waiting, meaning that the counter would become -(number of waiting threads) and the semaphore would not wake up until at least the same amount of releases was done. In practice this meant that the main thread had to do the last (number of threads) jobs, slowing down the simulation a bit.
+* Fixed a bug in `ManifoldBetweenTwoFaces` that led to incorrect `ContactManifold::mRelativeContactPointsOn2` when the contact normal and the face normal were not roughly parallel. Also it possibly led to jitter in the simulation in that case.
+* Fixed `InternalEdgeRemovingCollector` not working when colliding with a very dense triangle grid because it ran out of internal space. Now falling back to memory allocations when this happens to avoid ghost collisions.
+* Fixed running out of stack space when simulating a really high number of active rigid bodies.
+* Moved the 'broad phase bit' to the highest bit in `BodyID` to avoid running out of `NodeID`s in `BroadPhaseQuadTree` when calling `PhysicsSystem::OptimizeBroadPhase` on a tree with a very high body count.
+* `TempAllocatorImpl` uses 64 bit integers internally to allow for a higher max contact constraint count.
+* When inserting lots of bodies without using batching, a broad phase tree of depth > 128 can be created. If the `PhysicsSystem` was destructed in this situation, a stack overflow would cause a crash.
+* When calling `PhysicsSystem::Update` with a delta time of 0, contact remove callbacks were triggered by accident for all existing contacts.
+* Fixed `HingeConstraint` not having limits if `LimitsMin` was set to `-JPH_PI` or `LimitsMax` was set to `JPH_PI`. It should only be turned off if both are.
+* Fixed `CylinderShape::GetSupportingFace` returning the wrong face. When the height of a cylinder was small compared to its radius, it would sink more into the ground than needed during simulation.
+* When there were no active bodies, the step listeners weren't called. This meant they couldn't wake up bodies. The step listeners are now only skipped if the physics system is updated with zero delta time.
+* Fixed a race condition in soft body simulation that could break determinism.
+* Added overloads for placement new in the `JPH_OVERRIDE_NEW_DELETE` macro, this means it is no longer needed to do `:: new (address) JPH::class_name(constructor_arguments)` but you can do `new (address) JPH::class_name(constructor_arguments)`.
+* Fixed a GCC warning `-Wshadow=global`.
+
+## v5.2.0
 
 ### New functionality
 
@@ -10,20 +101,28 @@ For breaking API changes see [this document](https://github.com/jrouwe/JoltPhysi
 * Added TaperedCylinderShape. A cylinder with different top and bottom radii.
 * Added EmptyShape. A shape that collides with nothing and that can be used as a placeholder or for dummy bodies.
 * Use MeshShapeSettings::mPerTriangleUserData at about 25% memory increase to get per triangle user data through MeshShape::GetTriangleUserData
-* Added Shape::GetLeafShape function to be able to get a leaf shape given a sub shape ID
-* Added HeightFieldShape::GetSubShapeCoordinates to get the triangle coordinates of a particular sub shape ID
+* Added `Shape::GetLeafShape` to be able to get a leaf shape given a sub shape ID
+* Added `HeightFieldShape::GetSubShapeCoordinates` to get the triangle coordinates of a particular sub shape ID
 * Split back face mode between convex/triangles for ray casts. This allows you to e.g. have meshes that do give back face hits while convex shapes don't.
-* SoftBodyManifold now returns sensor contacts separately. Before this change, there was a limit of a single colliding body per soft body vertex. If the closest body happened to be a sensor this effectively disabled the collision with the world and caused artifacts. We can now also detect multiple sensor contacts per soft body and they are returned through a new interface SoftBodyManifold::GetSensorContactBodyID.
+* SoftBodyManifold now returns sensor contacts separately. Before this change, there was a limit of a single colliding body per soft body vertex. If the closest body happened to be a sensor this effectively disabled the collision with the world and caused artifacts. We can now also detect multiple sensor contacts per soft body and they are returned through a new interface `SoftBodyManifold::GetSensorContactBodyID`.
+* Added support for running Jolt with ThreadSanitizer.
+* Added support for using ScaledShape inside CharacterVirtual.
+* Added ability to save/restore a simulation in parts using `StateRecorder::SetIsLastPart`. Also added `StateRecorderFilter::ShouldRestoreContact` to allow selective restoring of contacts.
+* Added `JPH_DEBUG_SYMBOL_FORMAT` cmake option. This allows switching from the default dwarf symbol format to e.g. the source-map format for emscripten, which speeds up compilation.
 
 ### Bug fixes
 
 * Fixed an issue where enhanced internal edge removal would throw away valid contacts when a dynamic compound shape is colliding with another mesh / box shape.
 * Fixed an issue where the bounding volume of a HeightFieldShape was not properly adjusted when calling SetHeights leading to missed collisions.
-* Workaround for CMake error 'CMake Error: No output files for WriteBuild!' when using the 'Ninja Multi-Config' generator.
+* Workaround for CMake error `CMake Error: No output files for WriteBuild!` when using the 'Ninja Multi-Config' generator.
 * When a height field was created where SampleCount / BlockSize is not a power of 2 and a soft body touched the right or bottom border of the height field, the application would crash.
-* Fixed a link error 'ld: error: undefined symbol: pthread_create' on FreeBSD
-* Fixed missing files ConfigurationString.h and SoftBodyUpdateContext.h when running `cmake --install`
-* Fixed unresolved symbol '__emutls_v._ZN3JPH11PhysicsLock6sLocksE' when compiling Jolt as a shared library with MinGW
+* Fixed a link error `ld: error: undefined symbol: pthread_create` on FreeBSD.
+* Fixed missing files ConfigurationString.h and SoftBodyUpdateContext.h when running `cmake --install`.
+* Fixed various missing header files when running `cmake --install` when `ENABLE_OBJECT_STREAM=OFF`.
+* When using `cmake --install` to install a shared library on Windows, the dll is installed in the 'bin' folder now.
+* Fixed cmake warning: `Policy CMP0177 is not set: install() DESTINATION paths are normalized.`
+* Fixed `unresolved symbol '__emutls_v._ZN3JPH11PhysicsLock6sLocksE'` when compiling Jolt as a shared library with MinGW.
+* Added workaround for issue where Firefox has problems with the `_mm_blendv_ps` intrinsic when compiling to WASM.
 
 ## v5.1.0
 
