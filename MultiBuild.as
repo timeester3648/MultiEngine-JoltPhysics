@@ -22,4 +22,9 @@ void main(MultiBuild::Workspace& workspace) {
 		MultiBuild::ScopedFilter _(project, "project.compiler:VisualCpp");
 		properties.build_options({ "/Zc:__cplusplus", "/Gm-", "/MP", "/nologo", "/FC", "/fp:except-", "/Zc:inline", "/GR-" });
 	}
+
+	{
+		MultiBuild::ScopedFilter _(project, "!config.build_config:Distribution");
+		properties.defines("JPH_DEBUG_RENDERER");
+	}
 }
