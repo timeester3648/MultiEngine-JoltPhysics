@@ -286,6 +286,7 @@ JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, CreateRigTest)
 #ifdef JPH_OBJECT_STREAM
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, LoadRigTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, KinematicRigTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, SoftKeyframedRigTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, PoweredRigTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, RigPileTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, LoadSaveRigTest)
@@ -302,6 +303,7 @@ static TestNameAndRTTI sRigTests[] =
 	{ "Load / Save Rig",					JPH_RTTI(LoadSaveRigTest) },
 	{ "Load / Save Binary Rig",				JPH_RTTI(LoadSaveBinaryRigTest) },
 	{ "Kinematic Rig",						JPH_RTTI(KinematicRigTest) },
+	{ "Soft Keyframed Rig",					JPH_RTTI(SoftKeyframedRigTest) },
 	{ "Powered Rig",						JPH_RTTI(PoweredRigTest) },
 	{ "Skeleton Mapper",					JPH_RTTI(SkeletonMapperTest) },
 	{ "Rig Pile",							JPH_RTTI(RigPileTest) },
@@ -2168,6 +2170,12 @@ bool SamplesApp::UpdateFrame(float inDeltaTime)
 				mPlaybackMode = shift? EPlaybackMode::FastForward : EPlaybackMode::StepForward;
 			}
 			break;
+
+	#if defined(JPH_TRACK_SIMULATION_STATS) && defined(JPH_PROFILE_ENABLED)
+		case EKey::Y:
+			mPhysicsSystem->ReportSimulationStats();
+			break;
+	#endif
 		}
 
 	// Stop recording if record state is turned off

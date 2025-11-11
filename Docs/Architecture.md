@@ -41,11 +41,11 @@ If you need to add many bodies at the same time then use the batching functions:
 - BodyInterface::AddBodiesAbort - If you've called AddBodiesPrepare but changed your mind and no longer want to add the bodies to the PhysicsSystem. Useful when streaming in level sections and the player decides to go the other way.
 - BodyInterface::RemoveBodies - Batch remove a lot of bodies from the PhysicsSystem.
 
-Always use the batch adding functions when possible! Adding many bodies, one at a time, results in a really inefficient broadphase and in the worst case can lead to missed collisions (an assert will trigger if this is the case). If you cannot avoid adding many bodies one at a time, use PhysicsSystem::OptimizeBroadPhase to rebuild the tree.
+Always use the batch adding functions when possible! Adding many bodies, one at a time, results in a really inefficient broadphase (a trace will notify when this happens) and in extreme cases may lead to the broadphase running out of internal nodes (std::abort will be called in that case). If you cannot avoid adding many bodies one at a time, use PhysicsSystem::OptimizeBroadPhase to rebuild the tree.
 
 You can call AddBody, RemoveBody, AddBody, RemoveBody to temporarily remove and later reinsert a body into the simulation.
 
-## Multithreaded Access
+## Multithreaded Access {#multi-threaded-access}
 
 Jolt is designed to be accessed from multiple threads so the body interface comes in two flavors: A locking and a non-locking variant. The locking variant uses a mutex array (a fixed size array of mutexes, bodies are associated with a mutex through hashing and multiple bodies use the same mutex, see [MutexArray](@ref MutexArray)) to prevent concurrent access to the same body. The non-locking variant doesn't use mutexes, so requires the user to be careful.
 

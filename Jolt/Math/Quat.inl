@@ -328,48 +328,72 @@ Quat Quat::SLERP(QuatArg inDestination, float inFraction) const
 
 Vec3 Quat::operator * (Vec3Arg inValue) const
 {
-	// Rotating a vector by a quaternion is done by: p' = q * p * q^-1 (q^-1 = conjugated(q) for a unit quaternion)
+	// Rotating a vector by a quaternion is done by: p' = q * (p, 0) * q^-1 (q^-1 = conjugated(q) for a unit quaternion)
+	// Using Rodrigues formula: https://en.m.wikipedia.org/wiki/Euler%E2%80%93Rodrigues_formula
+	// This is equivalent to: p' = p + 2 * (q.w * q.xyz x p + q.xyz x (q.xyz x p))
+	//
+	// This is:
+	//
+	// Vec3 xyz = GetXYZ();
+	// Vec3 q_cross_p = xyz.Cross(inValue);
+	// Vec3 q_cross_q_cross_p = xyz.Cross(q_cross_p);
+	// Vec3 v = mValue.SplatW3() * q_cross_p + q_cross_q_cross_p;
+	// return inValue + (v + v);
+	//
+	// But we can write out the cross products in a more efficient way:
 	JPH_ASSERT(IsNormalized());
-	return Vec3((*this * Quat::sMultiplyImaginary(inValue, Conjugated())).mValue);
+	Vec3 xyz = GetXYZ();
+	Vec3 yzx = xyz.Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>();
+	Vec3 q_cross_p = (inValue.Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>() * xyz - yzx * inValue).Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>();
+	Vec3 q_cross_q_cross_p = (q_cross_p.Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>() * xyz - yzx * q_cross_p).Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>();
+	Vec3 v = mValue.SplatW3() * q_cross_p + q_cross_q_cross_p;
+	return inValue + (v + v);
 }
 
 Vec3 Quat::InverseRotate(Vec3Arg inValue) const
 {
 	JPH_ASSERT(IsNormalized());
-	return Vec3((Conjugated() * Quat::sMultiplyImaginary(inValue, *this)).mValue);
+	Vec3 xyz = GetXYZ(); // Needs to be negated, but we do this in the equations below
+	Vec3 yzx = xyz.Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>();
+	Vec3 q_cross_p = (yzx * inValue - inValue.Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>() * xyz).Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>();
+	Vec3 q_cross_q_cross_p = (yzx * q_cross_p - q_cross_p.Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>() * xyz).Swizzle<SWIZZLE_Y, SWIZZLE_Z, SWIZZLE_X>();
+	Vec3 v = mValue.SplatW3() * q_cross_p + q_cross_q_cross_p;
+	return inValue + (v + v);
 }
 
 Vec3 Quat::RotateAxisX() const
 {
 	// This is *this * Vec3::sAxisX() written out:
 	JPH_ASSERT(IsNormalized());
-	float x = GetX(), y = GetY(), z = GetZ(), w = GetW();
-	float tx = 2.0f * x, tw = 2.0f * w;
-	return Vec3(tx * x + tw * w - 1.0f, tx * y + z * tw, tx * z - y * tw);
+	Vec4 t = mValue + mValue;
+	return Vec3(t.SplatX() * mValue + (t.SplatW() * mValue.Swizzle<SWIZZLE_W, SWIZZLE_Z, SWIZZLE_Y, SWIZZLE_X>()).FlipSign<1, 1, -1, 1>() - Vec4(1, 0, 0, 0));
 }
 
 Vec3 Quat::RotateAxisY() const
 {
 	// This is *this * Vec3::sAxisY() written out:
 	JPH_ASSERT(IsNormalized());
-	float x = GetX(), y = GetY(), z = GetZ(), w = GetW();
-	float ty = 2.0f * y, tw = 2.0f * w;
-	return Vec3(x * ty - z * tw, tw * w + ty * y - 1.0f, x * tw + ty * z);
+	Vec4 t = mValue + mValue;
+	return Vec3(t.SplatY() * mValue + (t.SplatW() * mValue.Swizzle<SWIZZLE_Z, SWIZZLE_W, SWIZZLE_X, SWIZZLE_Y>()).FlipSign<-1, 1, 1, 1>() - Vec4(0, 1, 0, 0));
 }
 
 Vec3 Quat::RotateAxisZ() const
 {
 	// This is *this * Vec3::sAxisZ() written out:
 	JPH_ASSERT(IsNormalized());
-	float x = GetX(), y = GetY(), z = GetZ(), w = GetW();
-	float tz = 2.0f * z, tw = 2.0f * w;
-	return Vec3(x * tz + y * tw, y * tz - x * tw, tw * w + tz * z - 1.0f);
+	Vec4 t = mValue + mValue;
+	return Vec3(t.SplatZ() * mValue + (t.SplatW() * mValue.Swizzle<SWIZZLE_Y, SWIZZLE_X, SWIZZLE_W, SWIZZLE_Z>()).FlipSign<1, -1, 1, 1>() - Vec4(0, 0, 1, 0));
 }
 
 void Quat::StoreFloat3(Float3 *outV) const
 {
 	JPH_ASSERT(IsNormalized());
 	EnsureWPositive().GetXYZ().StoreFloat3(outV);
+}
+
+void Quat::StoreFloat4(Float4 *outV) const
+{
+	mValue.StoreFloat4(outV);
 }
 
 Quat Quat::sLoadFloat3Unsafe(const Float3 &inV)
