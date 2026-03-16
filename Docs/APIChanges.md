@@ -4,6 +4,16 @@ This document lists all breaking API changes by date and by release tag. Note th
 
 Changes that make some state saved through SaveBinaryState from a prior version of the library unreadable by the new version is marked as *SBS*. See [Saving Shapes](https://jrouwe.github.io/JoltPhysics/#saving-shapes) for further information.
 
+## Changes between v5.5.0 and latest
+
+* 20253012 - Added interface to run compute shaders on the GPU with implementations for DX12, Vulkan and Metal. These interfaces can be disabled by setting JPH_USE_DX12, JPH_USE_VK and JPH_USE_MTL to OFF. To build on macOS, you'll need to have dxc and spirv-cross installed. The easiest way to install them is by installing the Vulkan SDK. (5ac132df689fbf88da618181b0f1f73fca8bb1b4)
+* 20260307 - *SBS* - Added support for HeightFieldShapeSettings::mBitsPerSample > 8 which adds 1 byte to the binary serialization format and renders it incompatible with previous saved data. (449b645b71a7a47aa0d7bdcb5f9c197f1ddff5b0)
+
+## Changes between v5.4.0 and v5.5.0
+
+* 20251206 - Renamed `JPH_CPU_ADDRESS_BITS` to `JPH_CPU_ARCH_BITS` because the size of a pointer can be different from the number of bits used by the architecture. (db654de2a6098fd1ad78cb9a3e70f6a8a61c00b5)
+* 20251120 - Added BroadPhaseQuery::GetBounds, deprecated PhysicsSystem::GetBounds. (793b3a0dbd978552cc6bf68db1c473b32e8ba1ef)
+
 ## Changes between v5.3.0 and v5.4.0
 
 * 20240529 - *SBS* - Added `SoftBodyCreationSettings::mFacesDoubleSided` which treats the faces of the soft body as double sided. This changes the binary serialization format. (3ad037b9262ba81bf7ceda10687f2a07da38f091)

@@ -2,7 +2,7 @@
 // SPDX-FileCopyrightText: 2021 Jorrit Rouwe
 // SPDX-License-Identifier: MIT
 
-#include <TestFramework.h>
+#include <Samples.h>
 
 #include <SamplesApp.h>
 #include <Application/EntryPoint.h>
@@ -12,6 +12,7 @@
 #include <Jolt/Core/StreamWrapper.h>
 #include <Jolt/Core/StringTools.h>
 #include <Jolt/Geometry/OrientedBox.h>
+#include <Jolt/Compute/CPU/ComputeSystemCPU.h>
 #include <Jolt/Physics/PhysicsSystem.h>
 #include <Jolt/Physics/StateRecorderImpl.h>
 #include <Jolt/Physics/Body/BodyCreationSettings.h>
@@ -45,10 +46,12 @@
 #include <Jolt/Physics/Constraints/DistanceConstraint.h>
 #include <Jolt/Physics/Constraints/PulleyConstraint.h>
 #include <Jolt/Physics/Character/CharacterVirtual.h>
+#include <Jolt/Shaders/HairWrapper.h>
 #include <Utils/Log.h>
 #include <Utils/ShapeCreator.h>
 #include <Utils/CustomMemoryHook.h>
 #include <Utils/SoftBodyCreator.h>
+#include <Utils/ReadData.h>
 #include <Renderer/DebugRendererImp.h>
 
 JPH_SUPPRESS_WARNINGS_STD_BEGIN
@@ -389,6 +392,17 @@ static TestNameAndRTTI sSoftBodyTests[] =
 	{ "Soft Body vs Sensor",				JPH_RTTI(SoftBodySensorTest) }
 };
 
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, HairTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, HairCollisionTest)
+JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, HairGravityPreloadTest)
+
+static TestNameAndRTTI sHairTests[] =
+{
+	{ "Hair",								JPH_RTTI(HairTest) },
+	{ "Hair Collision",						JPH_RTTI(HairCollisionTest) },
+	{ "Hair Gravity Preload",				JPH_RTTI(HairGravityPreloadTest) },
+};
+
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, BroadPhaseCastRayTest)
 JPH_DECLARE_RTTI_FOR_FACTORY(JPH_NO_EXPORT, BroadPhaseInsertionTest)
 
@@ -435,6 +449,7 @@ static TestCategory sAllCategories[] =
 	{ "Water", sWaterTests, size(sWaterTests) },
 	{ "Vehicle", sVehicleTests, size(sVehicleTests) },
 	{ "Soft Body", sSoftBodyTests, size(sSoftBodyTests) },
+	{ "Hair", sHairTests, size(sHairTests) },
 	{ "Broad Phase", sBroadPhaseTests, size(sBroadPhaseTests) },
 	{ "Convex Collision", sConvexCollisionTests, size(sConvexCollisionTests) },
 	{ "Tools", sTools, size(sTools) }
@@ -469,6 +484,33 @@ SamplesApp::SamplesApp(const String &inCommandLine) :
 
 	// Create single threaded job system for validating
 	mJobSystemValidating = new JobSystemSingleThreaded(cMaxPhysicsJobs);
+
+	// Set shader loader
+	mComputeSystem = &mRenderer->GetComputeSystem();
+	mComputeSystem->mShaderLoader = [](const char *inName, Array<uint8> &outData, String &outError) {
+	#ifdef JPH_PLATFORM_MACOS
+		// In macOS the shaders are copied to the bundle
+		String base_path = "Jolt/Shaders/";
+	#else
+		// On other platforms they are in the Jolt source folder
+		String base_path = "../Jolt/Shaders/";
+	#endif
+		outData = ReadData((base_path + inName).c_str());
+		return true;
+	};
+
+	// Create compute queue
+	ComputeQueueResult queue_result = mComputeSystem->CreateComputeQueue();
+	if (queue_result.HasError())
+		FatalError(queue_result.GetError().c_str());
+	mComputeQueue = queue_result.Get();
+
+#ifdef JPH_USE_CPU_COMPUTE
+	// Create compute system CPU
+	mComputeSystemCPU = StaticCast<ComputeSystemCPU>(CreateComputeSystemCPU().Get());
+	HairRegisterShaders(mComputeSystemCPU);
+	mComputeQueueCPU = mComputeSystemCPU->CreateComputeQueue().Get();
+#endif // JPH_USE_CPU_COMPUTE
 
 	{
 		// Disable allocation checking
@@ -527,6 +569,9 @@ SamplesApp::SamplesApp(const String &inCommandLine) :
 			mDebugUI->CreateCheckBox(phys_settings, "Record State For Playback", mRecordState, [this](UICheckBox::EState inState) { mRecordState = inState == UICheckBox::STATE_CHECKED; });
 			mDebugUI->CreateCheckBox(phys_settings, "Check Determinism", mCheckDeterminism, [this](UICheckBox::EState inState) { mCheckDeterminism = inState == UICheckBox::STATE_CHECKED; });
 			mDebugUI->CreateCheckBox(phys_settings, "Install Contact Listener", mInstallContactListener, [this](UICheckBox::EState inState) { mInstallContactListener = inState == UICheckBox::STATE_CHECKED; StartTest(mTestClass); });
+#ifdef JPH_USE_CPU_COMPUTE
+			mDebugUI->CreateCheckBox(phys_settings, "Use GPU Compute System", mUseGPUCompute, [this](UICheckBox::EState inState) { mUseGPUCompute = inState == UICheckBox::STATE_CHECKED; StartTest(mTestClass); });
+#endif // JPH_USE_CPU_COMPUTE
 			mDebugUI->ShowMenu(phys_settings);
 		});
 	#ifdef JPH_DEBUG_RENDERER
@@ -548,7 +593,7 @@ SamplesApp::SamplesApp(const String &inCommandLine) :
 			mDebugUI->CreateCheckBox(drawing_options, "Draw Contact Manifolds (M)", ContactConstraintManager::sDrawContactManifolds, [](UICheckBox::EState inState) { ContactConstraintManager::sDrawContactManifolds = inState == UICheckBox::STATE_CHECKED; });
 			mDebugUI->CreateCheckBox(drawing_options, "Draw Motion Quality Linear Cast", PhysicsSystem::sDrawMotionQualityLinearCast, [](UICheckBox::EState inState) { PhysicsSystem::sDrawMotionQualityLinearCast = inState == UICheckBox::STATE_CHECKED; });
 			mDebugUI->CreateCheckBox(drawing_options, "Draw Bounding Boxes", mBodyDrawSettings.mDrawBoundingBox, [this](UICheckBox::EState inState) { mBodyDrawSettings.mDrawBoundingBox = inState == UICheckBox::STATE_CHECKED; });
-			mDebugUI->CreateCheckBox(drawing_options, "Draw Physics System Bounds", mDrawPhysicsSystemBounds, [this](UICheckBox::EState inState) { mDrawPhysicsSystemBounds = inState == UICheckBox::STATE_CHECKED; });
+			mDebugUI->CreateCheckBox(drawing_options, "Draw Broadphase Bounds", mDrawBroadPhaseBounds, [this](UICheckBox::EState inState) { mDrawBroadPhaseBounds = inState == UICheckBox::STATE_CHECKED; });
 			mDebugUI->CreateCheckBox(drawing_options, "Draw Center of Mass Transforms", mBodyDrawSettings.mDrawCenterOfMassTransform, [this](UICheckBox::EState inState) { mBodyDrawSettings.mDrawCenterOfMassTransform = inState == UICheckBox::STATE_CHECKED; });
 			mDebugUI->CreateCheckBox(drawing_options, "Draw World Transforms", mBodyDrawSettings.mDrawWorldTransform, [this](UICheckBox::EState inState) { mBodyDrawSettings.mDrawWorldTransform = inState == UICheckBox::STATE_CHECKED; });
 			mDebugUI->CreateCheckBox(drawing_options, "Draw Velocity", mBodyDrawSettings.mDrawVelocity, [this](UICheckBox::EState inState) { mBodyDrawSettings.mDrawVelocity = inState == UICheckBox::STATE_CHECKED; });
@@ -642,10 +687,16 @@ SamplesApp::SamplesApp(const String &inCommandLine) :
 		mDebugUI->ShowMenu(main_menu);
 	}
 
-	// Get test name from command line
-	String cmd_line = ToLower(inCommandLine);
+	// Explode command line into separate arguments
 	Array<String> args;
-	StringToVector(cmd_line, args, " ");
+	StringToVector(ToLower(inCommandLine), args, " ");
+
+	// Remove entries starting with `-`
+	for (int i = (int)args.size() - 1; i >= 0; --i)
+		if (!args[i].empty() && args[i].at(0) == '-')
+			args.erase(args.begin() + i);
+
+	// Get test name from command line
 	if (args.size() == 2)
 	{
 		String cmd = args[1];
@@ -689,6 +740,8 @@ SamplesApp::~SamplesApp()
 	delete mTest;
 	delete mContactListener;
 	delete mPhysicsSystem;
+	mComputeQueue = nullptr;
+	mComputeSystem = nullptr;
 	delete mJobSystemValidating;
 	delete mJobSystem;
 	delete mTempAllocator;
@@ -736,6 +789,14 @@ void SamplesApp::StartTest(const RTTI *inRTTI)
 	mTest = static_cast<Test *>(inRTTI->CreateObject());
 	mTest->SetPhysicsSystem(mPhysicsSystem);
 	mTest->SetJobSystem(mJobSystem);
+#ifdef JPH_USE_CPU_COMPUTE
+	if (mUseGPUCompute)
+#endif // JPH_USE_CPU_COMPUTE
+		mTest->SetComputeSystem(mComputeSystem, mComputeQueue);
+#ifdef JPH_USE_CPU_COMPUTE
+	else
+		mTest->SetComputeSystem(mComputeSystemCPU, mComputeQueueCPU);
+#endif // JPH_USE_CPU_COMPUTE
 	mTest->SetDebugRenderer(mDebugRenderer);
 	mTest->SetTempAllocator(mTempAllocator);
 	if (mInstallContactListener)
@@ -2365,8 +2426,8 @@ void SamplesApp::DrawPhysics()
 	if (mDrawConstraintReferenceFrame)
 		mPhysicsSystem->DrawConstraintReferenceFrame(mDebugRenderer);
 
-	if (mDrawPhysicsSystemBounds)
-		mDebugRenderer->DrawWireBox(mPhysicsSystem->GetBounds(), Color::sGreen);
+	if (mDrawBroadPhaseBounds)
+		mDebugRenderer->DrawWireBox(mPhysicsSystem->GetBroadPhaseQuery().GetBounds(), Color::sGreen);
 #endif // JPH_DEBUG_RENDERER
 
 	mTest->DrawBodyLabels();

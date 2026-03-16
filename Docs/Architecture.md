@@ -541,7 +541,7 @@ You can use Shape::GetUserData to determine if a shape is a high or a low detail
 
 ## Continuous Collision Detection {#continuous-collision-detection}
 
-Each body has a motion quality setting ([EMotionQuality](@ref EMotionQuality)). By default the motion quality is [Discrete](@ref Discrete). This means that at the beginning of each simulation step we will perform collision detection and if no collision is found, the body is free to move according to its velocity. This usually works fine for big or slow moving objects. Fast and small objects can easily 'tunnel' through thin objects because they can completely move through them in a single time step. For these objects there is the motion quality [LinearCast](@ref LinearCast). Objects that have this motion quality setting will do the same collision detection at the beginning of the simulation step, but once their new position is known, they will do an additional CastShape to check for any collisions that may have been missed. If this is the case, the object is placed back to where the collision occurred and will remain there until the next time step. This is called 'time stealing' and has the disadvantage that an object may appear to move much slower for a single time step and then speed up again. The alternative, back stepping the entire simulation, is computationally heavy so was not implemented.
+Each body has a motion quality setting ([EMotionQuality](@ref EMotionQuality)). By default the motion quality is [Discrete](@ref EMotionQuality::Discrete). This means that at the beginning of each simulation step we will perform collision detection and if no collision is found, the body is free to move according to its velocity. This usually works fine for big or slow moving objects. Fast and small objects can easily 'tunnel' through thin objects because they can completely move through them in a single time step. For these objects there is the motion quality [LinearCast](@ref EMotionQuality::LinearCast). Objects that have this motion quality setting will do the same collision detection at the beginning of the simulation step, but once their new position is known, they will do an additional CastShape to check for any collisions that may have been missed. If this is the case, the object is placed back to where the collision occurred and will remain there until the next time step. This is called 'time stealing' and has the disadvantage that an object may appear to move much slower for a single time step and then speed up again. The alternative, back stepping the entire simulation, is computationally heavy so was not implemented.
 
 ![With the Discrete motion quality the blue object tunnels through the green object in a single time step. With motion quality LinearCast it doesn't.](Images/MotionQuality.jpg)
 
@@ -663,7 +663,8 @@ If you want cross platform determinism then please turn on the CROSS_PLATFORM_DE
 * Compiler used to compile the library (tested MSVC2022, clang, gcc and emscripten)
 * Configuration (Debug, Release or Distribution)
 * OS (tested Windows, macOS, Linux)
-* Architecture (x86 or ARM).
+* Architecture (x86, ARM, RISC-V, PowerPC, LoongArch)
+* Word size (32 / 64 bit)
 
 Some caveats:
 
@@ -672,7 +673,7 @@ Some caveats:
 * Broadphase queries (BroadPhaseQuery) are NOT deterministic because the broad phase can be modified from multiple threads. As bodies are modified, their bounding boxes get widened until the next maintenance update. This may be several calls to PhysicsSystem::Update later. If you want to do a broadphase query determinisically then create a custom CollisionCollector that in its AddHit function repeats the query against the actual bounding box of the body (Body::GetWorldSpaceBounds) and accept only hits that collide with this bounding box. Also ensure that you order the results consistently.
 * Narrowphase queries (NarrowPhaseQuery) will return consistent results, but the order in which the results are received can change. This is again due the fact that the broadphase can be modified from multiple threads.
 
-It is quite difficult to verify cross platform determinism, so this feature is less tested than other features. With every build, the following architectures are verified to produce the same results:
+It is quite difficult to verify cross platform determinism, so this feature is less tested than other features. With every build, the following architectures are verified to produce the same results for a number of scenes:
 
 * Windows MSVC x86 64-bit with AVX2
 * Windows MSVC x86 32-bit with SSE2
@@ -683,6 +684,7 @@ It is quite difficult to verify cross platform determinism, so this feature is l
 * Linux gcc x86 64-bit with AVX2
 * Linux gcc ARM 64-bit with NEON
 * Linux gcc RISC-V 64-bit
+* Linux clang RISC-V 64-bit with RVV
 * Linux gcc PowerPC (Little Endian) 64-bit
 * Linux gcc LoongArch 64-bit
 * WASM32 emscripten running in nodejs

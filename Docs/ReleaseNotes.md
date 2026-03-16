@@ -2,20 +2,52 @@
 
 For breaking API changes see [this document](https://github.com/jrouwe/JoltPhysics/blob/master/Docs/APIChanges.md).
 
-## Unreleased Changes
+## Unreleased changes
+
+### New functionality
+
+* Added interface to run compute shaders on the GPU with implementations for DX12, Vulkan and Metal. These interfaces can be disabled by setting `JPH_USE_DX12`, `JPH_USE_VK`, `JPH_USE_MTL` and `JPH_USE_CPU_COMPUTE` to `OFF`. To build on macOS, you'll need to have dxc and spirv-cross installed. The easiest way to install them is by installing the Vulkan SDK.
+* Added a strand based hair simulation running on GPU
+	* System is based on Cosserad rods.
+	* Can use long range attachment constraints to limit the stretch of hairs.
+	* Supports simulation (guide) and render (follow) hairs.
+	* Hair vs hair collision is handled by accumulating the average velocity in a grid and using those velocities to drive hairs.
+	* Supports collision with the environment, although it only supports ConvexHull and CompoundShapes at the moment.
+	* The roots of the hairs can be skinned to the scalp mesh.
+	* Note that this is still work in progress, some things that still need to be done are listed in Hair.h.
+* Increased maximum value of HeightFieldShape::mBitsPerSample to 16 to be able to create height fields that more closely match the uncompressed height values.
+* Made tolerance that's used in the internal edge removal algorithm configurable in `CollideShapeSettings::mInternalEdgeRemovalVertexToleranceSq` and `PhysicsSettings::mInternalEdgeRemovalVertexToleranceSq`.
+* Added support for RISC-V RVV, the SIMD extension for RISC-V.
+
+### Bug Fixes
+
+* Made it possible to make a class outside the `JPH` namespace serializable.
+* `VehicleConstraint`s are automatically disabled when the vehicle body is not in the `PhysicsSystem`.
+* Fixed an issue where a character could get stuck. If the character was teleported inside an area surrounded by slopes that are steeper than `mMaxSlopeAngle`, the code to stop the constraint solver from ping ponging between two planes didn't work properly.
+* Fixed an issue where collide/cast shape against a triangle would return a hit result with `mShape2Face` in incorrect winding order. This caused an incorrect normal in the enhanced internal edge removal algorithm. This in turn resulted in objects not settling properly on dense triangle grids.
+* When using `Body::AddForce` to apply gravity, bodies could gain extra energy during elastic collisions. We now cancel added forces in the direction of the contact normal if the body starts in collision to negate this energy gain.
+* Made `MoveKinematic` more accurate when rotating a body by a very small angle.
+
+## v5.5.0
 
 ### New functionality
 
 * Added new define `JPH_TRACK_SIMULATION_STATS` which tracks simulation statistics on a per body basis. This can be used to figure out bodies are the most expensive to simulate.
 * Added `RagdollSettings::CalculateConstraintPriorities` which calculates constraint priorities that boost the priority of joints towards the root of the ragdoll.
+* `BoxShape`, `CylinderShape` and `TaperedCylinderShape` will now automatically reduce the convex radius if the specified value is too big for the shape (instead of erroring out).
+* Added ability to configure the thickness of triangles when colliding with soft bodies through `CollideSoftBodyVerticesVsTriangles::sTriangleThickness`.
+* Added `JPH_DEFAULT_ALLOCATE_ALIGNMENT` which allows defining the default `Allocate` alignment if your allocator's alignment is different from the alignment as defined by `__STDCPP_DEFAULT_NEW_ALIGNMENT__`.
 
 ### Bug Fixes
 
+* Visual Studio 2026 support.
 * A 6DOF constraint that constrains all rotation axis in combination with a body that has some of its rotation axis locked would not constrain the rotation in the unlocked axis.
 * Added include `type_traits` for `std::is_trivial` to avoid compile error on macOS with clang 21.
 * Fixed compilation error when using Jolt in conjunction with the `_CRTDBG_MAP_ALLOC` define on Windows.
 * Fixed cast shape possibly not returning a hit when a shape cast starts touching (but not intersecting) another shape and requesting the deepest hit.
 * Fixed division by zero when doing a really long (6 KM) sphere cast against a triangle. In this case the floating point accuracy became low enough so that the distance between the sphere center and the triangle (which should be 'radius') became zero instead.
+* Fixed memory leak when providing invalid parameters to `TaperedCylinderShapeSettings` and creating the shape.
+* Fixed collision between soft body and `TriangleShape`/`MeshShape`/`HeightFieldShape`. This would not find the closest collision point in case the shape was scaled. It would also make the triangles much thicker than intended causing collisions with back facing triangles that were very far away.
 
 ## v5.4.0
 
@@ -39,7 +71,7 @@ For breaking API changes see [this document](https://github.com/jrouwe/JoltPhysi
 * `QuadTree` will now fall back to the heap when running out of stack space during collision queries. Previously this would trigger an assert and some collisions would not be detected.
 * Fixed `BodyInterface::MoveKinematic`, `SetLinearVelocity`, `SetAngularVelocity`, `SetLinearAndAngularVelocity`, `AddLinearVelocity`, `AddLinearAndAngularVelocity`, `SetPositionRotationAndVelocity` and `SetMotionType` when body not added to the physics system yet.
 * Fixed UBSAN false positive error that detected a dirty trick in `SimShapeFilter`.
-* WheelSettingsTV and WheelSettingsWV were not serializing their base class members.
+* `WheelSettingsTV` and `WheelSettingsWV` were not serializing their base class members.
 * The remap tables in `SoftBodySharedSettings::OptimizationResults` mapped from new to old index instead of from old to new as was documented. The maps now behave as documented.
 * Fixed an issue where soft body bend constraints could be created with identical vertices. This led to an assert triggering.
 * Fixed infinite recursion when colliding a `TriangleShape` vs a `TriangleShape`.

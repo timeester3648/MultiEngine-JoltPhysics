@@ -86,6 +86,13 @@ Why create yet another physics engine? Firstly, it has been a personal learning 
 	* Internal pressure.
 	* Collision with simulated rigid bodies.
 	* Collision tests against soft bodies.
+* A strand based hair simulation running on GPU
+	* System is based on Cosserad rods.
+	* Can use long range attachment constraints to limit the stretch of hairs.
+	* Supports simulation (guide) and render (follow) hairs.
+	* Hair vs hair collision is handled by accumulating the average velocity in a grid and using those velocities to drive hairs.
+	* Supports collision with the environment, although it only supports ConvexHull and CompoundShapes at the moment.
+	* The roots of the hairs can be skinned to the scalp mesh.
 * Water buoyancy calculations.
 * An optional double precision mode that allows large worlds.
 
@@ -149,9 +156,10 @@ If you're interested in how Jolt scales with multiple CPUs and compares to other
 
 * C [here](https://github.com/amerkoleci/joltc), [here](https://github.com/zig-gamedev/zphysics/tree/main/libs/JoltC) and [here](https://github.com/SecondHalfGames/JoltC/)
 * [C#](https://github.com/amerkoleci/JoltPhysicsSharp)
-* [Java or Kotlin](https://stephengold.github.io/jolt-jni-docs)
+* Java or Kotlin [here](https://stephengold.github.io/jolt-jni-docs) and [here](https://github.com/Morgoth398/JoltPhysics-JavaFFM)
 * [JavaScript](https://github.com/jrouwe/JoltPhysics.js)
 * [Rust](https://github.com/SecondHalfGames/jolt-rust)
+* [Python](https://github.com/Evilpasture/Culverin)
 * [Zig](https://github.com/zig-gamedev/zphysics)
 
 ## Integrations in other engines

@@ -528,6 +528,7 @@ TEST_SUITE("PhysicsTests")
 	}
 
 	// Let a sphere bounce on the floor with restitution = 1
+	template <bool GravityThroughAddForce>
 	static void TestPhysicsCollisionElastic(PhysicsTestContext &ioContext)
 	{
 		const float cSimulationTime = 1.0f;
@@ -536,19 +537,34 @@ TEST_SUITE("PhysicsTests")
 		const RVec3 cFloorHitPos(0.0f, 1.0f - cFloorHitEpsilon, 0.0f); // Sphere with radius 1 will hit floor when 1 above the floor
 		const RVec3 cInitialPos = cFloorHitPos - cDistanceTraveled;
 
+		// Cancel normal gravity and apply it through AddForce if requested
+		if constexpr (GravityThroughAddForce)
+			ioContext.ZeroGravity();
+
 		// Create sphere
 		ioContext.CreateFloor();
 		Body &body = ioContext.CreateSphere(cInitialPos, 1.0f, EMotionType::Dynamic, EMotionQuality::Discrete, Layers::MOVING);
 		body.SetRestitution(1.0f);
 
+		// Callback to apply gravity
+		auto apply_custom_gravity = [&body]() {
+				if constexpr (GravityThroughAddForce)
+				{
+					CHECK(body.GetAccumulatedForce() == Vec3::sZero()); // Should have been reset after the step
+					body.AddForce(cGravity / body.GetMotionProperties()->GetInverseMass());
+				}
+				JPH_UNUSED(body);
+			};
+
 		// Simulate until at floor
-		ioContext.Simulate(cSimulationTime);
+		ioContext.Simulate(cSimulationTime, apply_custom_gravity);
 		CHECK_APPROX_EQUAL(cFloorHitPos, body.GetPosition());
 
 		// Assert collision not yet processed
 		CHECK_APPROX_EQUAL(cSimulationTime * cGravity, body.GetLinearVelocity(), 1.0e-4f);
 
 		// Simulate one more step to process the collision
+		apply_custom_gravity();
 		ioContext.SimulateSingleStep();
 
 		// Assert that collision is processed and velocity is reversed (which is required for a fully elastic collision).
@@ -565,13 +581,14 @@ TEST_SUITE("PhysicsTests")
 
 		// Simulate same time minus one step, with a fully elastic body we should reach the initial position again
 		RVec3 expected_pos = ioContext.PredictPosition(pos_after_bounce_full_step, reflected_velocity_after_full_step, cGravity, cSimulationTime - ioContext.GetDeltaTime());
-		ioContext.Simulate(cSimulationTime - ioContext.GetDeltaTime());
+		ioContext.Simulate(cSimulationTime - ioContext.GetDeltaTime(), apply_custom_gravity);
 		CHECK_APPROX_EQUAL(expected_pos, body.GetPosition(), 1.0e-5f);
 		CHECK_APPROX_EQUAL(expected_pos, cInitialPos, 1.0e-5f);
 
 		// If we do one more step, we should be going down again
 		RVec3 pre_step_pos = body.GetPosition();
 		CHECK(body.GetLinearVelocity().GetY() > 0.0f);
+		apply_custom_gravity();
 		ioContext.SimulateSingleStep();
 		CHECK(body.GetLinearVelocity().GetY() < 1.0e-6f);
 		CHECK(body.GetPosition().GetY() < pre_step_pos.GetY() + 1.0e-6f);
@@ -580,13 +597,22 @@ TEST_SUITE("PhysicsTests")
 	TEST_CASE("TestPhysicsCollisionElastic")
 	{
 		PhysicsTestContext c1(1.0f / 60.0f, 1);
-		TestPhysicsCollisionElastic(c1);
+		TestPhysicsCollisionElastic<false>(c1);
 
 		PhysicsTestContext c2(2.0f / 60.0f, 2);
-		TestPhysicsCollisionElastic(c2);
+		TestPhysicsCollisionElastic<false>(c2);
 
 		PhysicsTestContext c4(4.0f / 60.0f, 4);
-		TestPhysicsCollisionElastic(c4);
+		TestPhysicsCollisionElastic<false>(c4);
+
+		PhysicsTestContext c5(1.0f / 60.0f, 1);
+		TestPhysicsCollisionElastic<true>(c5);
+
+		PhysicsTestContext c6(2.0f / 60.0f, 2);
+		TestPhysicsCollisionElastic<true>(c6);
+
+		PhysicsTestContext c7(4.0f / 60.0f, 4);
+		TestPhysicsCollisionElastic<true>(c7);
 	}
 
 	// Let a sphere with restitution 0.9 bounce on the floor
@@ -749,6 +775,60 @@ TEST_SUITE("PhysicsTests")
 			CHECK_APPROX_EQUAL(sphere1.GetLinearVelocity(), expected1);
 			CHECK_APPROX_EQUAL(sphere2.GetLinearVelocity(), expected2);
 		}
+	}
+
+
+	// Test a box moving kinematically
+	static void TestPhysicsMoveKinematic(PhysicsTestContext &ioContext)
+	{
+		const int cNumSteps = 60;
+
+		// Create box
+		Body &body = ioContext.CreateBox(RVec3::sZero(), Quat::sIdentity(), EMotionType::Kinematic, EMotionQuality::Discrete, Layers::MOVING, Vec3(1, 1, 1));
+
+		UnitTestRandom random;
+		for (int i = 0; i < 10; ++i)
+		{
+			// Remember old position
+			Quat old_rotation = body.GetRotation();
+			RVec3 old_position = body.GetPosition();
+
+			// Move to new spot
+			RVec3 position = RVec3(Vec3::sRandom(random) * 5.0f);
+			Quat rotation = Quat::sRandom(random);
+			ioContext.GetBodyInterface().MoveKinematic(body.GetID(), position, rotation, ioContext.GetDeltaTime() * cNumSteps);
+
+			// Simulate cNumSteps
+			for (int j = 0; j < cNumSteps; ++j)
+			{
+				ioContext.SimulateSingleStep();
+
+				// Check intermediate position
+				float fraction = float(j + 1) / float(cNumSteps);
+				RVec3 expected_pos = old_position + (position - old_position) * fraction;
+				CHECK_APPROX_EQUAL(body.GetPosition(), expected_pos, 1.0e-4f);
+
+				// Check intermediate rotation
+				Quat expected_rot = old_rotation.SLERP(rotation, fraction);
+				CHECK_APPROX_EQUAL(body.GetRotation(), expected_rot, 1.0e-5f);
+			}
+
+			// Check arrived
+			CHECK_APPROX_EQUAL(body.GetPosition(), position, 1.0e-4f);
+			CHECK_APPROX_EQUAL(body.GetRotation(), rotation, 1.0e-5f);
+		}
+	}
+
+	TEST_CASE("TestPhysicsMoveKinematic")
+	{
+		PhysicsTestContext c1(1.0f / 60.0f, 1);
+		TestPhysicsMoveKinematic(c1);
+
+		PhysicsTestContext c2(2.0f / 60.0f, 2);
+		TestPhysicsMoveKinematic(c2);
+
+		PhysicsTestContext c4(4.0f / 60.0f, 4);
+		TestPhysicsMoveKinematic(c4);
 	}
 
 	// Let box intersect with floor by cPenetrationSlop. It should not move, this is the maximum penetration allowed.

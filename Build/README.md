@@ -39,6 +39,10 @@ There are a number of user configurable defines that turn on/off certain feature
 		<li>JPH_NO_FORCE_INLINE - Don't use force inlining but fall back to a regular 'inline'.</li>
 		<li>JPH_USE_STD_VECTOR - Use std::vector instead of Jolt's own Array class.</li>
 		<li>CPP_RTTI_ENABLED - Enable C++ RTTI for the library. Disabled by default.</li>
+		<li>JPH_USE_DX12 - Implement the DX12 version of ComputeSystem.</li>
+		<li>JPH_USE_VK - Implement the Vulkan version of ComputeSystem.</li>
+		<li>JPH_USE_MTL - Implement the Metal version of ComputeSystem.</li>
+		<li>JPH_USE_CPU_COMPUTE - Implement the CPU fallback version of ComputeSystem (mainly for debugging purposes).</li>
 	</ul>
 </details>
 
@@ -130,7 +134,7 @@ To implement your custom memory allocator override Allocate, Free, Reallocate, A
 	<ul>
 		<li>Install clang (apt-get install clang)</li>
 		<li>Install cmake (apt-get install cmake)</li>
-		<li>If you want to build the Samples or JoltViewer, install the <a href="https://vulkan.lunarg.com/doc/view/latest/linux/getting_started_ubuntu.html">Vulkan SDK</a></li>
+		<li>If you want to build the Samples, JoltViewer or use the ComputeSystem, install the <a href="https://vulkan.lunarg.com/doc/view/latest/linux/getting_started_ubuntu.html">Vulkan SDK</a></li>
 		<li>Run: ./cmake_linux_clang_gcc.sh</li>
 		<li>Go to the Linux_Debug folder</li>
 		<li>Run: make -j$(nproc) && ./UnitTests</li>
@@ -152,6 +156,7 @@ To implement your custom memory allocator override Allocate, Free, Reallocate, A
 	<summary>macOS</summary>
 	<ul>
 		<li>Install XCode</li>
+		<li>Install the Vulkan SDK or the dxc and spirv-cross tools (required to cross compile hlsl shaders to Metal)</li>
 		<li>Download CMake 3.23+ (https://cmake.org/download/)</li>
 		<li>Run: ./cmake_xcode_macos.sh</li>
 		<li>This will open XCode with a newly generated project</li>
@@ -164,6 +169,7 @@ To implement your custom memory allocator override Allocate, Free, Reallocate, A
 	<summary>iOS</summary>
 	<ul>
 		<li>Install XCode</li>
+		<li>Install the Vulkan SDK or the dxc and spirv-cross tools (required to cross compile hlsl shaders to Metal)</li>
 		<li>Download CMake 3.23+ (https://cmake.org/download/)</li>
 		<li>Run: ./cmake_xcode.ios.sh</li>
 		<li>This will open XCode with a newly generated project</li>
@@ -226,7 +232,7 @@ you have a mismatch between RTTI settings (MSVC: `/GR`/`/GR-`, clang: `-frtti`/`
 
 ### DirectX Error
 
-The samples use DirectX for the graphics implementation, when attempting to run the samples you may get a DirectX error pop-up which may say "The GPU device instance has been suspended", in your debugger you may see the message "Using the Redistributable D3D12 SDKLayers dll also requires that the latest SDKLayers for Windows 10 is installed.". 
+The samples use DirectX for the graphics implementation, when attempting to run the samples you may get a DirectX error pop-up which may say "The GPU device instance has been suspended", in your debugger you may see the message "Using the Redistributable D3D12 SDKLayers dll also requires that the latest SDKLayers for Windows 10 is installed.".
 
 Fix this by enabling "Graphics Tools" which is an optional Windows settings. To enable it you have to press the windows key, search for "Manage Optional Features", and then click "Add a Feature", and install "Graphics Tools".
 

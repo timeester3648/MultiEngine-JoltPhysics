@@ -1,3 +1,7 @@
+.cache/
+.clangd/
+.fleet/
+.idea/
 .vs
 .vscode
 .DS_Store
@@ -6,8 +10,9 @@
 /snapshot.bin
 /*.jor
 /detlog.txt
-/Assets/Shaders/VK/*.spv
-/Assets/Shaders/MTL/*.metallib
+*.spv
+*.metallib
+/Assets/*.hair
 
 # exclude project files
 **.sln
