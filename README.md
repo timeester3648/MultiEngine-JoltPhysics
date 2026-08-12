@@ -98,7 +98,7 @@ Why create yet another physics engine? Firstly, it has been a personal learning 
 
 ## Supported platforms
 
-* Windows (Desktop or UWP) x86/x64/ARM32/ARM64
+* Windows x86/x64/ARM64
 * Linux (tested on Ubuntu) x86/x64/ARM32/ARM64/RISC-V64/LoongArch64/PowerPC64LE
 * FreeBSD
 * Android x86/x64/ARM32/ARM64
@@ -111,7 +111,7 @@ Why create yet another physics engine? Firstly, it has been a personal learning 
 ## Required CPU features
 
 * On x86/x64 the minimal requirements are SSE2. The library can be compiled using SSE4.1, SSE4.2, AVX, AVX2, or AVX512.
-* On ARM64 the library uses NEON and FP16. On ARM32 it can be compiled without any special CPU instructions.
+* On ARM64 (AArch64) the library uses NEON and is compatible with Armv8-A. On ARM32 (AArch32) it doesn't use any special CPU instructions.
 
 ## Documentation
 
@@ -125,7 +125,7 @@ Some algorithms used by Jolt are described in detail in my GDC 2022 talk: Archit
 
 ## Compiling
 
-* Compiles with Visual Studio 2019+, Clang 10+ or GCC 9+.
+* Compiles with Visual Studio 2022+, Clang 16+ or GCC 12+.
 * Uses C++ 17.
 * Depends only on the standard template library.
 * Doesn't use RTTI.
@@ -154,13 +154,14 @@ If you're interested in how Jolt scales with multiple CPUs and compares to other
 
 ## Bindings for other languages
 
-* C [here](https://github.com/amerkoleci/joltc), [here](https://github.com/zig-gamedev/zphysics/tree/main/libs/JoltC) and [here](https://github.com/SecondHalfGames/JoltC/)
+* C [here](https://github.com/amerkoleci/joltc), [here](https://github.com/zig-gamedev/zphysics/tree/main/libs/JoltC), [here](https://github.com/SecondHalfGames/JoltC/) and [here](https://github.com/ostef/JoltC/)
 * [C#](https://github.com/amerkoleci/JoltPhysicsSharp)
 * Java or Kotlin [here](https://stephengold.github.io/jolt-jni-docs) and [here](https://github.com/Morgoth398/JoltPhysics-JavaFFM)
 * [JavaScript](https://github.com/jrouwe/JoltPhysics.js)
 * [Rust](https://github.com/SecondHalfGames/jolt-rust)
 * [Python](https://github.com/Evilpasture/Culverin)
 * [Zig](https://github.com/zig-gamedev/zphysics)
+* [Jai](https://github.com/ostef/Jolt-Jai), based on this [bindings generator](https://github.com/ostef/JoltC-BindGen)
 
 ## Integrations in other engines
 

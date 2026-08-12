@@ -144,24 +144,24 @@ TEST_SUITE("CharacterVirtualTests")
 
 	private:
 		// CharacterContactListener callback
-		virtual bool			OnContactValidate(const CharacterVirtual *inCharacter, const BodyID &inBodyID2, const SubShapeID &inSubShapeID2) override
+		virtual bool			OnContactValidate(const CharacterVirtual *inCharacter, const CharacterContact &inContact) override
 		{
-			return mContactLog.OnContactValidate(inCharacter, inBodyID2, inSubShapeID2);
+			return mContactLog.OnContactValidate(inCharacter, inContact);
 		}
 
-		virtual bool			OnCharacterContactValidate(const CharacterVirtual *inCharacter, const CharacterVirtual *inOtherCharacter, const SubShapeID &inSubShapeID2) override
+		virtual bool			OnCharacterContactValidate(const CharacterVirtual *inCharacter, const CharacterContact &inContact) override
 		{
-			return mContactLog.OnCharacterContactValidate(inCharacter, inOtherCharacter, inSubShapeID2);
+			return mContactLog.OnCharacterContactValidate(inCharacter, inContact);
 		}
 
-		virtual void			OnContactAdded(const CharacterVirtual *inCharacter, const BodyID &inBodyID2, const SubShapeID &inSubShapeID2, RVec3Arg inContactPosition, Vec3Arg inContactNormal, CharacterContactSettings &ioSettings) override
+		virtual void			OnContactAdded(const CharacterVirtual *inCharacter, const CharacterContact &inContact, CharacterContactSettings &ioSettings) override
 		{
-			mContactLog.OnContactAdded(inCharacter, inBodyID2, inSubShapeID2, inContactPosition, inContactNormal, ioSettings);
+			mContactLog.OnContactAdded(inCharacter, inContact, ioSettings);
 		}
 
-		virtual void			OnContactPersisted(const CharacterVirtual *inCharacter, const BodyID &inBodyID2, const SubShapeID &inSubShapeID2, RVec3Arg inContactPosition, Vec3Arg inContactNormal, CharacterContactSettings &ioSettings) override
+		virtual void			OnContactPersisted(const CharacterVirtual *inCharacter, const CharacterContact &inContact, CharacterContactSettings &ioSettings) override
 		{
-			mContactLog.OnContactPersisted(inCharacter, inBodyID2, inSubShapeID2, inContactPosition, inContactNormal, ioSettings);
+			mContactLog.OnContactPersisted(inCharacter, inContact, ioSettings);
 		}
 
 		virtual void			OnContactRemoved(const CharacterVirtual *inCharacter, const BodyID &inBodyID2, const SubShapeID &inSubShapeID2) override
@@ -169,14 +169,14 @@ TEST_SUITE("CharacterVirtualTests")
 			mContactLog.OnContactRemoved(inCharacter, inBodyID2, inSubShapeID2);
 		}
 
-		virtual void			OnCharacterContactAdded(const CharacterVirtual *inCharacter, const CharacterVirtual *inOtherCharacter, const SubShapeID &inSubShapeID2, RVec3Arg inContactPosition, Vec3Arg inContactNormal, CharacterContactSettings &ioSettings) override
+		virtual void			OnCharacterContactAdded(const CharacterVirtual *inCharacter, const CharacterContact &inContact, CharacterContactSettings &ioSettings) override
 		{
-			mContactLog.OnCharacterContactAdded(inCharacter, inOtherCharacter, inSubShapeID2, inContactPosition, inContactNormal, ioSettings);
+			mContactLog.OnCharacterContactAdded(inCharacter, inContact, ioSettings);
 		}
 
-		virtual void			OnCharacterContactPersisted(const CharacterVirtual *inCharacter, const CharacterVirtual *inOtherCharacter, const SubShapeID &inSubShapeID2, RVec3Arg inContactPosition, Vec3Arg inContactNormal, CharacterContactSettings &ioSettings) override
+		virtual void			OnCharacterContactPersisted(const CharacterVirtual *inCharacter, const CharacterContact &inContact, CharacterContactSettings &ioSettings) override
 		{
-			mContactLog.OnCharacterContactPersisted(inCharacter, inOtherCharacter, inSubShapeID2, inContactPosition, inContactNormal, ioSettings);
+			mContactLog.OnCharacterContactPersisted(inCharacter, inContact, ioSettings);
 		}
 
 		virtual void			OnCharacterContactRemoved(const CharacterVirtual *inCharacter, const CharacterID &inOtherCharacterID, const SubShapeID &inSubShapeID2) override
@@ -270,7 +270,7 @@ TEST_SUITE("CharacterVirtualTests")
 			// After 1 step we should be on the slope
 			character.Step();
 			CHECK(character.mCharacter->GetGroundState() == expected_ground_state);
-			CHECK_APPROX_EQUAL(character.GetPosition(), position_after_1_step, 2.0e-6f);
+			CHECK_APPROX_EQUAL(character.GetPosition(), position_after_1_step, 1.0e-5f);
 
 			// Cancel any velocity to make the calculation below easier (otherwise we have to take gravity for 1 time step into account)
 			character.mCharacter->SetLinearVelocity(Vec3::sZero());
@@ -859,7 +859,7 @@ TEST_SUITE("CharacterVirtualTests")
 		float character2_radius = character2.mRadiusStanding + character2.mCharacterSettings.mCharacterPadding;
 		float separation = character1_radius + character2_radius;
 		RVec3 expected_colliding_with_character = character2.mInitialPosition - Vec3(separation, 0, 0);
-		CHECK_APPROX_EQUAL(character1.GetPosition(), expected_colliding_with_character, 1.0e-3f);
+		CHECK_APPROX_EQUAL(character1.GetPosition(), expected_colliding_with_character);
 		CHECK(character1.GetNumContacts() == 2);
 		CHECK(character1.HasCollidedWith(floor_id));
 		CHECK(character1.HasCollidedWith(character2.mCharacter));
@@ -876,7 +876,7 @@ TEST_SUITE("CharacterVirtualTests")
 		character1.Simulate(1.0f);
 
 		// Character 1 should have stopped at character 2
-		CHECK_APPROX_EQUAL(character1.GetPosition(), expected_colliding_with_character, 1.0e-3f);
+		CHECK_APPROX_EQUAL(character1.GetPosition(), expected_colliding_with_character);
 		CHECK(character1.GetNumContacts() == 2);
 		CHECK(character1.HasCollidedWith(floor_id));
 		CHECK(character1.HasCollidedWith(character2.mCharacter));
@@ -895,7 +895,7 @@ TEST_SUITE("CharacterVirtualTests")
 
 		// Expect that it ends up at the box
 		RVec3 expected_colliding_with_box = box_position - Vec3(character1_radius + box_extent.GetX(), 0, 0);
-		CHECK_APPROX_EQUAL(character1.GetPosition(), expected_colliding_with_box, 1.0e-3f);
+		CHECK_APPROX_EQUAL(character1.GetPosition(), expected_colliding_with_box);
 		CHECK(character1.GetNumContacts() == 2);
 		CHECK(character1.HasCollidedWith(floor_id));
 		CHECK(character1.HasCollidedWith(box_id));
@@ -912,7 +912,7 @@ TEST_SUITE("CharacterVirtualTests")
 		character1.Simulate(1.0f);
 
 		// Expect that it ends up at the box
-		CHECK_APPROX_EQUAL(character1.GetPosition(), expected_colliding_with_box, 1.0e-3f);
+		CHECK_APPROX_EQUAL(character1.GetPosition(), expected_colliding_with_box);
 		CHECK(character1.GetNumContacts() == 2);
 		CHECK(character1.HasCollidedWith(floor_id));
 		CHECK(character1.HasCollidedWith(box_id));

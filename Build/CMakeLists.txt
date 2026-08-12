@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
-project(JoltPhysics VERSION 5.5.1 LANGUAGES CXX)
+project(JoltPhysics VERSION 5.6.0 LANGUAGES CXX)
 
 # When turning this option on, the library will be compiled using assertions. By default asserts are enabled in Debug build.
 option(USE_ASSERTS "Enable asserts" OFF)
@@ -27,7 +27,7 @@ option(CROSS_COMPILE_ARM "Cross compile to the CROSS_COMPILE_ARM_TARGET architec
 set(CROSS_COMPILE_ARM_TARGET "aarch64-linux-gnu" CACHE STRING "The target to use")
 
 # When turning this option on, Jolt will be compiled as a shared library and public symbols will be exported.
-option(BUILD_SHARED_LIBS "Compile Jolt as a shared library" OFF)
+option(JPH_BUILD_SHARED_LIBS "Compile Jolt as a shared library" ${BUILD_SHARED_LIBS})
 
 # When turning this option on, the library will be compiled with interprocedural optimizations enabled, also known as link-time optimizations or link-time code generation.
 # Note that if you turn this on you need to use SET_INTERPROCEDURAL_OPTIMIZATION() or set(CMAKE_INTERPROCEDURAL_OPTIMIZATION ON) to enable LTO specifically for your own project as well.
@@ -121,9 +121,6 @@ cmake_dependent_option(USE_STATIC_MSVC_RUNTIME_LIBRARY "Use the static MSVC runt
 # Option to compile with DirectX 12 compute
 option(JPH_USE_DX12 "Use DirectX" ON)
 
-# Use DXC compiler to compile shaders, when off falls back to FXC
-option(JPH_USE_DXC "Use DXC shader compiler" ON)
-
 # Option to compile with Vulkan compute
 option(JPH_USE_VK "Use Vulkan" ON)
 
@@ -132,6 +129,12 @@ option(JPH_USE_MTL "Use Metal" ON)
 
 # Option to compile with CPU fallback compute
 option(JPH_USE_CPU_COMPUTE "Use CPU Compute" ON)
+
+# Option to enable shader debug symbols
+option(JPH_SHADER_DEBUG_SYMBOLS "Shader Debug Symbols" OFF)
+
+# Option to enable shader optimizations. When this is on, the shaders will be optimized for performance, otherwise they're suitable for debugging.
+option(JPH_SHADER_OPTIMIZATION "Shader Optimization" ON)
 
 # Determine which configurations exist
 if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) # Only do this when we're at the top level, see: https://gitlab.kitware.com/cmake/cmake/-/issues/24181
@@ -143,9 +146,6 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR) # Only do this when we'r
 endif()
 
 if (MSVC)
-	# Fill in the path to the asan libraries
-	set(CLANG_LIB_PATH "\"$(VSInstallDir)\\VC\\Tools\\Llvm\\x64\\lib\\clang\\${CMAKE_CXX_COMPILER_VERSION}\\lib\\windows\"")
-
 	# 64 bit architecture
 	set(CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE "x64")
 
@@ -209,9 +209,13 @@ if (MSVC)
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast") # Clang doesn't use fast math because it cannot be turned off inside a single compilation unit
 		endif()
 	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+		# Fill in the path to the asan libraries
+		string(REGEX MATCH "^[0-9]+" CLANG_VERSION_MAJOR "${CMAKE_CXX_COMPILER_VERSION}")
+		set(CLANG_LIB_PATH "\"$(VSInstallDir)\\VC\\Tools\\Llvm\\x64\\lib\\clang\\${CLANG_VERSION_MAJOR}\\lib\\windows\"")
+
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /showFilenames")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Qunused-arguments") # Clang emits warnings about unused arguments such as /MP and /GL
-		set(CMAKE_EXE_LINKER_FLAGS_RELEASEASAN "/SUBSYSTEM:CONSOLE /LIBPATH:${CLANG_LIB_PATH} clang_rt.asan-x86_64.lib -wholearchive:clang_rt.asan-x86_64.lib clang_rt.asan_cxx-x86_64.lib -wholearchive:clang_rt.asan_cxx-x86_64.lib")
+		set(CMAKE_EXE_LINKER_FLAGS_RELEASEASAN "/SUBSYSTEM:CONSOLE /LIBPATH:${CLANG_LIB_PATH} clang_rt.asan_dynamic-x86_64.lib clang_rt.asan_dynamic_runtime_thunk-x86_64.lib")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASEUBSAN "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LIBPATH:${CLANG_LIB_PATH}")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASETSAN "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LIBPATH:${CLANG_LIB_PATH}")
 		set(CMAKE_EXE_LINKER_FLAGS_RELEASECOVERAGE "${CMAKE_EXE_LINKER_FLAGS_RELEASE} /LIBPATH:${CLANG_LIB_PATH}")
@@ -246,26 +250,25 @@ else()
 	if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
 		# Also disable -Wstringop-overflow or it will generate false positives that can't be disabled from code when link-time optimizations are enabled
 		# Also disable -Wno-psabi to avoid messages of the form note: parameter passing for argument of type '...' changed in GCC 7.1
-		# Also turn off automatic fused multiply add contractions, there doesn't seem to be a way to do this selectively through the macro JPH_PRECISE_MATH_OFF
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-stringop-overflow -Wno-psabi -ffp-contract=off")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-stringop-overflow -Wno-psabi")
 	else()
-		# Do not use -ffast-math since it cannot be turned off in a single compilation unit under clang, see Core.h
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-model=precise")
-
-		# On clang 14 and later we can turn off float contraction through a pragma, older versions and deterministic versions need it off always, see Core.h
-		# clang on LoongArch does not support such pragma, also turn off contraction for it.
-		if (CMAKE_CXX_COMPILER_VERSION LESS 14 OR CROSS_PLATFORM_DETERMINISTIC OR "${CMAKE_SYSTEM_PROCESSOR}" MATCHES "loongarch")
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=off")
-
-			# Clang 20 and later complain with: overriding '-ffp-model=precise' option with '-ffp-contract=off' [-Woverriding-option], but this is exactly what we want.
-			if (CMAKE_CXX_COMPILER_VERSION GREATER 19)
-				set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-overriding-option")
-			endif()
-		endif()
-
 		# Cross compiler flags
 		if (CROSS_COMPILE_ARM AND NOT ("${CROSS_COMPILE_ARM_TARGET}" STREQUAL ""))
 			set(CMAKE_CXX_FLAGS "--target=${CROSS_COMPILE_ARM_TARGET} ${CMAKE_CXX_FLAGS}")
+		endif()
+	endif()
+
+	# Do not use -ffast-math since it creates too many inaccuracies under clang
+	# FMA is not compatible with cross platform determinism
+	if (CROSS_PLATFORM_DETERMINISTIC OR NOT USE_FMADD OR EMSCRIPTEN)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=off")
+	else()
+		if (${CMAKE_SYSTEM_PROCESSOR} MATCHES "^x86")
+			# On x86 our FMA intrinsics are preserved
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=fast")
+		else()
+			# On ARM (and maybe other platforms) using 'fast' mode actually replaces a FMA intrinsic in Debug / when using LTO (?) with a 'mul' and an 'add' causing us to lose precision
+			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffp-contract=on")
 		endif()
 	endif()
 
@@ -301,7 +304,7 @@ function(SET_INTERPROCEDURAL_OPTIMIZATION)
 		AND NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM64")
 		AND NOT ("${CMAKE_VS_PLATFORM_NAME}" STREQUAL "ARM")
 		AND (NOT CROSS_COMPILE_ARM OR ("${CROSS_COMPILE_ARM_TARGET}" STREQUAL "aarch64-linux-gnu"))
-		AND NOT (MINGW AND BUILD_SHARED_LIBS))
+		AND NOT (MINGW AND JPH_BUILD_SHARED_LIBS))
 		include(CheckIPOSupported)
 		check_ipo_supported(RESULT IS_IPO_SUPPORTED OUTPUT IPO_CHECK_OUTPUT)
 
@@ -342,6 +345,12 @@ if (ENABLE_INSTALL)
 			cmake_path(SET DST_FILE NORMALIZE "${CMAKE_INSTALL_INCLUDEDIR}/${DESTINATION_PATH}")
 			install(FILES ${SRC_FILE} DESTINATION ${DST_FILE})
 		endif()
+	endforeach()
+	foreach(SRC_FILE ${JOLT_PHYSICS_DXIL_SHADERS} ${JOLT_PHYSICS_METAL_LIB} ${JOLT_PHYSICS_SPV_SHADERS})
+		string(REPLACE ${PHYSICS_REPO_ROOT} "" RELATIVE_SRC_FILE ${SRC_FILE})
+		get_filename_component(DESTINATION_PATH ${RELATIVE_SRC_FILE} DIRECTORY)
+		cmake_path(SET DST_FILE NORMALIZE "${CMAKE_INSTALL_DATADIR}/${DESTINATION_PATH}")
+		install(FILES ${SRC_FILE} DESTINATION ${DST_FILE})
 	endforeach()
 
 	# Export Jolt library
@@ -475,5 +484,18 @@ if (CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 				message("Cannot build JoltViewer because Vulkan/DirectX/Metal SDK is not available!")
 			endif()
 		endif()
+	endif()
+
+	# Copy DX12 runtime DLLs (dxcompiler.dll, dxil.dll) to the output directory of each application
+	if (JPH_DX12_RUNTIME_DLLS)
+		foreach(TARGET_NAME Samples JoltViewer UnitTests)
+			if (TARGET ${TARGET_NAME})
+				add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+					COMMAND ${CMAKE_COMMAND} -E copy_if_different
+						${JPH_DX12_RUNTIME_DLLS}
+						$<TARGET_FILE_DIR:${TARGET_NAME}>
+					COMMENT "Copying DX12 runtime DLLs to ${TARGET_NAME} output directory")
+			endif()
+		endforeach()
 	endif()
 endif()

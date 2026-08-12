@@ -13,7 +13,7 @@ on:
       - '**.md'
 
 env:
-  EMSCRIPTEN_VERSION: 4.0.22
+  EMSCRIPTEN_VERSION: 5.0.6
   NODE_VERSION: 24.x
   UBUNTU_CLANG_VERSION: clang++-18
   UBUNTU_GCC_VERSION: g++-14
@@ -30,7 +30,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/ubuntu24_install_vulkan_sdk.sh
     - name: Configure CMake
@@ -52,7 +52,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/ubuntu24_install_vulkan_sdk.sh
     - name: Configure CMake
@@ -80,7 +80,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/ubuntu24_install_vulkan_sdk.sh
     - name: Configure CMake
@@ -102,7 +102,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Update APT
       run: sudo apt update
     - name: Install G++-Multilib
@@ -127,7 +127,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/ubuntu24_install_vulkan_sdk.sh
     - name: Configure CMake
@@ -149,7 +149,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/ubuntu24_install_vulkan_sdk.sh
     - name: Configure CMake
@@ -171,7 +171,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/ubuntu24_install_vulkan_sdk.sh
     - name: Configure CMake
@@ -184,7 +184,7 @@ jobs:
       run: ctest --output-on-failure --verbose
 
   msys2_mingw_gcc:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     defaults:
       run:
         shell: msys2 {0}
@@ -197,7 +197,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Setup MSYS2
       uses: msys2/setup-msys2@v2
       with:
@@ -214,7 +214,7 @@ jobs:
       run: ctest --output-on-failure --verbose
 
   msvc_cl:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     name: Visual Studio CL
     strategy:
         fail-fast: false
@@ -224,24 +224,20 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/Build/VS2022_CL -G "Visual Studio 17 2022" -A x64 Build -DDOUBLE_PRECISION=${{matrix.double_precision}}
+      working-directory: ${{github.workspace}}/Build
+      run: ./cmake_vs2026_cl.bat -DDOUBLE_PRECISION=${{matrix.double_precision}}
     - name: Build
-      run: msbuild Build\VS2022_CL\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
+      run: msbuild Build\VS2026_CL\JoltPhysics.slnx /property:Configuration=${{matrix.build_type}} -m
     - name: Test
-      working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
-      shell: cmd
-      # We need to run vcvarsall to set the search path to include the Windows SDK, if not dxcompiler.dll will not be found and the UnitTests application will crash
-      run: |
-        for /f "delims=" %%i in ('vswhere -latest -property installationPath') do set VS_PATH=%%i
-        call "%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat" x64
-        UnitTests.exe
+      working-directory: ${{github.workspace}}/Build/VS2026_CL/${{matrix.build_type}}
+      run: ./UnitTests.exe
 
   msvc_cl_no_object_stream:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     name: Visual Studio CL - No Object Stream
     strategy:
         fail-fast: false
@@ -250,24 +246,20 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/Build/VS2022_CL -G "Visual Studio 17 2022" -A x64 Build -DENABLE_OBJECT_STREAM=NO
+      working-directory: ${{github.workspace}}/Build
+      run: ./cmake_vs2026_cl.bat -DENABLE_OBJECT_STREAM=NO
     - name: Build
-      run: msbuild Build\VS2022_CL\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
+      run: msbuild Build\VS2026_CL\JoltPhysics.slnx /property:Configuration=${{matrix.build_type}} -m
     - name: Test
-      working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
-      shell: cmd
-      # We need to run vcvarsall to set the search path to include the Windows SDK, if not dxcompiler.dll will not be found and the UnitTests application will crash
-      run: |
-        for /f "delims=" %%i in ('vswhere -latest -property installationPath') do set VS_PATH=%%i
-        call "%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat" x64
-        UnitTests.exe
+      working-directory: ${{github.workspace}}/Build/VS2026_CL/${{matrix.build_type}}
+      run: ./UnitTests.exe
 
   msvc_cl_dll:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     name: Visual Studio CL Shared Library
     strategy:
         fail-fast: false
@@ -276,24 +268,20 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/Build/VS2022_CL -G "Visual Studio 17 2022" -A x64 Build -DBUILD_SHARED_LIBS=Yes
+      working-directory: ${{github.workspace}}/Build
+      run: ./cmake_vs2026_cl.bat -DBUILD_SHARED_LIBS=Yes
     - name: Build
-      run: msbuild Build\VS2022_CL\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
+      run: msbuild Build\VS2026_CL\JoltPhysics.slnx /property:Configuration=${{matrix.build_type}} -m
     - name: Test
-      working-directory: ${{github.workspace}}/Build/VS2022_CL/${{matrix.build_type}}
-      shell: cmd
-      # We need to run vcvarsall to set the search path to include the Windows SDK, if not dxcompiler.dll will not be found and the UnitTests application will crash
-      run: |
-        for /f "delims=" %%i in ('vswhere -latest -property installationPath') do set VS_PATH=%%i
-        call "%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat" x64
-        UnitTests.exe
+      working-directory: ${{github.workspace}}/Build/VS2026_CL/${{matrix.build_type}}
+      run: ./UnitTests.exe
 
   msvc_cl_32_bit:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     name: Visual Studio CL 32-bit
     strategy:
         fail-fast: false
@@ -302,24 +290,20 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/Build/VS2022_CL_32_BIT -G "Visual Studio 17 2022" -A Win32 -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF Build
+      working-directory: ${{github.workspace}}/Build
+      run: ./cmake_vs2026_cl_32bit.bat
     - name: Build
-      run: msbuild Build\VS2022_CL_32_BIT\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
+      run: msbuild Build\VS2026_CL_32BIT\JoltPhysics.slnx /property:Configuration=${{matrix.build_type}} -m
     - name: Test
-      working-directory: ${{github.workspace}}/Build/VS2022_CL_32_BIT/${{matrix.build_type}}
-      shell: cmd
-      # We need to run vcvarsall to set the search path to include the Windows SDK, if not dxcompiler.dll will not be found and the UnitTests application will crash
-      run: |
-        for /f "delims=" %%i in ('vswhere -latest -property installationPath') do set VS_PATH=%%i
-        call "%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat" x86
-        UnitTests.exe
+      working-directory: ${{github.workspace}}/Build/VS2026_CL_32BIT/${{matrix.build_type}}
+      run: ./UnitTests.exe
 
   msvc_cl_arm:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     name: Visual Studio CL ARM
     strategy:
         fail-fast: false
@@ -328,38 +312,17 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/Build/VS2022_CL_ARM -G "Visual Studio 17 2022" -A ARM64 Build
+      working-directory: ${{github.workspace}}/Build
+      run: ./cmake_vs2026_cl_arm.bat
     - name: Build
-      run: msbuild Build\VS2022_CL_ARM\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
-
-  msvc_cl_arm_32_bit:
-    runs-on: windows-latest
-    name: Visual Studio CL ARM 32-bit
-    strategy:
-        fail-fast: false
-        matrix:
-            build_type: [Debug, Release]
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v6
-    - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
-    - name: Install Windows 11 SDK (10.0.22621.0)
-      # Alternative: Start-Process -wait -FilePath "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vs_installer.exe" -ArgumentList "modify", "--installPath", """C:\Program Files\Microsoft Visual Studio\2022\Enterprise""", "--quiet", "--norestart", "--nocache", "--add", "Microsoft.VisualStudio.Component.Windows11SDK.22621" -Verb RunAs
-      run: choco install windows-sdk-11-version-22H2-all -y
-    - name: Configure CMake
-      # Windows 11 SDK 10.0.22621.0 is the last SDK to support 32-bit ARM
-      run: cmake -B ${{github.workspace}}/Build/VS2022_CL_ARM_32_BIT -G "Visual Studio 17 2022" -A ARM -DCMAKE_SYSTEM_VERSION="10.0.22621.0" -DCMAKE_CXX_COMPILER_WORKS=1 Build
-    - name: Build
-      run: msbuild Build\VS2022_CL_ARM_32_BIT\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
+      run: msbuild Build\VS2026_CL_ARM\JoltPhysics.slnx /property:Configuration=${{matrix.build_type}} -m
 
   msvc_clang:
-    runs-on: windows-latest
+    runs-on: windows-2025-vs2026
     name: Visual Studio Clang
     strategy:
         fail-fast: false
@@ -369,21 +332,17 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Add msbuild to PATH
-      uses: microsoft/setup-msbuild@v2
+      uses: microsoft/setup-msbuild@v3
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/Build/VS2022_Clang -G "Visual Studio 17 2022" -A x64 -T ClangCL Build -DDOUBLE_PRECISION=${{matrix.double_precision}}
+      working-directory: ${{github.workspace}}/Build
+      run: ./cmake_vs2026_clang.bat -DDOUBLE_PRECISION=${{matrix.double_precision}}
     - name: Build
-      run: msbuild Build\VS2022_Clang\JoltPhysics.sln /property:Configuration=${{matrix.build_type}} -m
+      run: msbuild Build\VS2026_Clang\JoltPhysics.slnx /property:Configuration=${{matrix.build_type}} -m
     - name: Test
-      working-directory: ${{github.workspace}}/Build/VS2022_Clang/${{matrix.build_type}}
-      shell: cmd
-      # We need to run vcvarsall to set the search path to include the Windows SDK, if not dxcompiler.dll will not be found and the UnitTests application will crash
-      run: |
-        for /f "delims=" %%i in ('vswhere -latest -property installationPath') do set VS_PATH=%%i
-        call "%VS_PATH%\VC\Auxiliary\Build\vcvarsall.bat" x64
-        UnitTests.exe
+      working-directory: ${{github.workspace}}/Build/VS2026_Clang/${{matrix.build_type}}
+      run: ./UnitTests.exe
 
   macos:
     runs-on: macos-latest
@@ -397,7 +356,9 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
+    - name: Install Metal Toolchain
+      run: xcodebuild -downloadComponent MetalToolchain
     - name: Install Vulkan
       run: ${{github.workspace}}/Build/macos_install_vulkan_sdk.sh ${VULKAN_SDK_INSTALL}
     - name: Configure CMake
@@ -420,7 +381,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Setup Java
       uses: actions/setup-java@v5
       with:
@@ -438,7 +399,7 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Configure CMake
       run: cmake -B ${{github.workspace}}/Build/XCode_iOS -DTARGET_HELLO_WORLD=OFF -DTARGET_PERFORMANCE_TEST=OFF -DCMAKE_SYSTEM_NAME=iOS -GXcode Build
     - name: Build
@@ -450,15 +411,15 @@ jobs:
 
     steps:
     - name: Checkout Code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
     - name: Setup emsdk
-      uses: mymindstorm/setup-emsdk@v14
+      uses: mymindstorm/setup-emsdk@v16
       with:
         version: ${{env.EMSCRIPTEN_VERSION}}
     - name: Verify emsdk
       run: emcc -v
     - name: Setup Node.js ${{env.NODE_VERSION}}
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: ${{env.NODE_VERSION}}
     - name: Configure CMake

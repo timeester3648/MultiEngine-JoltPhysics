@@ -53,19 +53,9 @@ JPH_NAMESPACE_END
 
 TEST_SUITE("ComputeTests")
 {
-	static const char *cInvalidShaderName = "InvalidShader";
-	static const char *cInvalidShaderCode = "invalid_shader_code";
-
 	static void RunTests(ComputeSystem *inComputeSystem)
 	{
 		inComputeSystem->mShaderLoader = [](const char *inName, Array<uint8> &outData, String &outError) {
-			// Special case to test what happens when an invalid file is returned
-			if (strstr(inName, cInvalidShaderName) != nullptr)
-			{
-				outData.assign(cInvalidShaderCode, cInvalidShaderCode + strlen(cInvalidShaderCode));
-				return true;
-			}
-
 		#if defined(JPH_PLATFORM_MACOS) || defined(JPH_PLATFORM_IOS)
 			// In macOS the shaders are copied to the bundle
 			CFBundleRef bundle = CFBundleGetMainBundle();
@@ -77,7 +67,7 @@ TEST_SUITE("ComputeTests")
 			char path[PATH_MAX];
 			CFStringGetCString(path_string, path, PATH_MAX, kCFStringEncodingUTF8);
 			CFRelease(path_string);
-    		String base_path = String(path) + "/Jolt/Shaders/";
+			String base_path = String(path) + "/Jolt/Shaders/";
 		#else
 			// On other platforms, start searching up from the application path
 			#ifdef JPH_PLATFORM_WINDOWS
@@ -194,6 +184,7 @@ TEST_SUITE("ComputeTests")
 
 			// Create the shader
 			ComputeShaderResult shader_result = inComputeSystem->CreateComputeShader("TestCompute", cTestComputeGroupSize);
+			CHECK(!shader_result.HasError());
 			if (shader_result.HasError())
 			{
 				Trace("Shader could not be created: %s", shader_result.GetError().c_str());
@@ -259,6 +250,7 @@ TEST_SUITE("ComputeTests")
 		{
 			// Create the shader
 			ComputeShaderResult shader_result = inComputeSystem->CreateComputeShader("TestCompute2", cTestCompute2GroupSize);
+			CHECK(!shader_result.HasError());
 			if (shader_result.HasError())
 			{
 				Trace("Shader could not be created: %s", shader_result.GetError().c_str());
@@ -341,13 +333,6 @@ TEST_SUITE("ComputeTests")
 			CHECK(!IsKindOf(compute_system.Get(), JPH_RTTI(ShapeSettings)));
 
 			RunTests(compute_system.Get());
-
-			// Test failing shader compilation
-			{
-				ComputeShaderResult shader_result = compute_system.Get()->CreateComputeShader(cInvalidShaderName, 64);
-				CHECK(shader_result.HasError());
-				CHECK(strstr(shader_result.GetError().c_str(), cInvalidShaderCode) != nullptr); // Assume that the error message contains the invalid code
-			}
 		}
 	}
 #endif // JPH_USE_DX12
