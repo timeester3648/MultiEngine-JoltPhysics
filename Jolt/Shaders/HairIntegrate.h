@@ -9,7 +9,7 @@ float DeltaDensity(uint inIndex)
 
 void ApplyGrid(JPH_IN(JPH_HairPosition) inPos, JPH_IN_OUT(JPH_HairVelocity) ioVel, JPH_IN(JPH_HairMaterial) inMaterial, float inStrandFraction)
 {
-	if (!inMaterial.mEnableGrid)
+	if (inMaterial.mEnableGrid == 0)
 		return;
 
 	// Convert position to grid index and fraction

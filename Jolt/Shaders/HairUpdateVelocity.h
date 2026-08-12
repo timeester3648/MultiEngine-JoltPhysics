@@ -10,7 +10,7 @@ void ApplyCollisionAndUpdateVelocity(uint inVtx, JPH_IN_OUT(JPH_HairPosition) io
 	outVel.mVelocity = (ioPos.mPosition - inPreviousPos.mPosition) / cDeltaTime;
 	outVel.mAngularVelocity = cTwoDivDeltaTime * JPH_QuatMulQuat(ioPos.mRotation, JPH_QuatConjugate(inPreviousPos.mRotation)).xyz;
 
-	if (inMaterial.mEnableCollision)
+	if (inMaterial.mEnableCollision != 0)
 	{
 		// Calculate closest point on the collision plane
 		JPH_HairCollisionPlane plane = gCollisionPlanes[inVtx];

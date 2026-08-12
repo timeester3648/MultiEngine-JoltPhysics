@@ -102,7 +102,7 @@ JPH_SHADER_FUNCTION_END
 	JPH_HairPosition v1 = gPositions[vtx_idx_to_load];
 
 	// Process 2nd vertex
-	if (material.mEnableLRA && inv_mass1 > 0.0f)
+	if (material.mEnableLRA != 0 && inv_mass1 > 0.0f)
 		ApplyLRA(x0, max_dist, v1);
 	max_dist += length1;
 
@@ -120,7 +120,7 @@ JPH_SHADER_FUNCTION_END
 		JPH_HairPosition v2 = gPositions[vtx_idx_to_load];
 
 		// Process newly added vertex
-		if (material.mEnableLRA && inv_mass2 > 0.0f)
+		if (material.mEnableLRA != 0 && inv_mass2 > 0.0f)
 			ApplyLRA(x0, max_dist, v2);
 		max_dist += length2;
 
