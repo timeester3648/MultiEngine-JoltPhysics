@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "HairApplyDeltaTransformBindings.h"
-#include "HairCommon.h"
+// #include "HairCommon.h"
+#include "../JoltHairCommonOverride.glsl"
 
 JPH_SHADER_FUNCTION_BEGIN(void, main, cHairPerVertexBatch, 1, 1)
 	JPH_SHADER_PARAM_THREAD_ID(tid)

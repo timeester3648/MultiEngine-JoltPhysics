@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "HairGridAccumulateBindings.h"
-#include "HairCommon.h"
+// #include "HairCommon.h"
+#include "../JoltHairCommonOverride.glsl"
 
 void AtomicAddVelocityAndDensity(uint inIndex, int4 inValue)
 {

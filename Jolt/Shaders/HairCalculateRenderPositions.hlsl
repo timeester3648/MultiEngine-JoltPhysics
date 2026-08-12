@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "HairCalculateRenderPositionsBindings.h"
-#include "HairCommon.h"
+// #include "HairCommon.h"
+#include "../JoltHairCommonOverride.glsl"
 #include "HairCalculateRenderPositions.h"
 
 JPH_SHADER_FUNCTION_BEGIN(void, main, cHairPerRenderVertexBatch, 1, 1)

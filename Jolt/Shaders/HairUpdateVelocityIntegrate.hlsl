@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "HairUpdateVelocityIntegrateBindings.h"
-#include "HairCommon.h"
+// #include "HairCommon.h"
+#include "../JoltHairCommonOverride.glsl"
 #include "HairIntegrate.h"
 #include "HairUpdateVelocity.h"
 

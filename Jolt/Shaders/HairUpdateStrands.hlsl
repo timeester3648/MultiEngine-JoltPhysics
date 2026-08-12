@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "HairUpdateStrandsBindings.h"
-#include "HairCommon.h"
+// #include "HairCommon.h"
+#include "../JoltHairCommonOverride.glsl"
 
 void ApplyLRA(float3 inX0, float inMaxDist, JPH_IN_OUT(JPH_HairPosition) ioV0)
 {

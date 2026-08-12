@@ -18,6 +18,11 @@ void main(MultiBuild::Workspace& workspace) {
 		"./Jolt/**.natvis"
 	});
 
+	properties.excluded_files({
+		"./Jolt/Compute/*/**.cpp",
+		"./Jolt/Compute/*/**.h",
+	});
+
 	{
 		MultiBuild::ScopedFilter _(project, "project.compiler:VisualCpp");
 		properties.build_options({ "/Zc:__cplusplus", "/Gm-", "/MP", "/nologo", "/FC", "/fp:except-", "/Zc:inline", "/GR-" });
@@ -27,4 +32,6 @@ void main(MultiBuild::Workspace& workspace) {
 		MultiBuild::ScopedFilter _(project, "!config.build_config:Distribution");
 		properties.defines("JPH_DEBUG_RENDERER");
 	}
+
+	properties.pre_build_commands("{:copy_directory:} \"{:project.root}/Jolt/Shaders\" \"{:workspace.root}/resources/shaders/MultiEngine/modules/jolt/impl\"");
 }

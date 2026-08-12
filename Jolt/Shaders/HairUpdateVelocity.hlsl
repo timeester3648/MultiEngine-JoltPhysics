@@ -3,7 +3,8 @@
 // SPDX-License-Identifier: MIT
 
 #include "HairUpdateVelocityBindings.h"
-#include "HairCommon.h"
+// #include "HairCommon.h"
+#include "../JoltHairCommonOverride.glsl"
 #include "HairUpdateVelocity.h"
 
 JPH_SHADER_FUNCTION_BEGIN(void, main, cHairPerVertexBatch, 1, 1)
