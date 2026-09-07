@@ -866,10 +866,6 @@ if (OBJECT_LAYER_BITS)
 	target_compile_definitions(Jolt PUBLIC JPH_OBJECT_LAYER_BITS=${OBJECT_LAYER_BITS})
 endif()
 
-if (USE_STD_VECTOR)
-	target_compile_definitions(Jolt PUBLIC JPH_USE_STD_VECTOR)
-endif()
-
 # Setting to periodically trace broadphase stats to help determine if the broadphase layer configuration is optimal
 if (TRACK_BROADPHASE_STATS)
 	target_compile_definitions(Jolt PUBLIC JPH_TRACK_BROADPHASE_STATS)
@@ -990,8 +986,8 @@ else()
 			target_compile_options(Jolt PUBLIC -msimd128 -msse4.2)
 		endif()
 		if (JPH_USE_WASM64)
-			target_compile_options(Jolt PUBLIC -sMEMORY64)
-			target_link_options(Jolt PUBLIC -sMEMORY64)
+			target_compile_options(Jolt PUBLIC -m64)
+			target_link_options(Jolt PUBLIC -m64)
 		endif()
 	elseif ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "AMD64" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86" OR "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "i386")
 		# x86 and x86_64

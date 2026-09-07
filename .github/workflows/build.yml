@@ -13,7 +13,7 @@ on:
       - '**.md'
 
 env:
-  EMSCRIPTEN_VERSION: 5.0.6
+  EMSCRIPTEN_VERSION: 6.0.8
   NODE_VERSION: 24.x
   UBUNTU_CLANG_VERSION: clang++-18
   UBUNTU_GCC_VERSION: g++-14
@@ -110,29 +110,6 @@ jobs:
     - name: Configure CMake
       working-directory: ${{github.workspace}}/Build
       run: ./cmake_linux_clang_gcc.sh ${{matrix.build_type}} ${{env.UBUNTU_CLANG_VERSION}} -DCMAKE_CXX_FLAGS=-m32 -DUSE_SSE4_1=OFF -DUSE_SSE4_2=OFF -DUSE_AVX=OFF -DUSE_AVX2=OFF -DUSE_AVX512=OFF -DUSE_LZCNT=OFF -DUSE_TZCNT=OFF -DUSE_F16C=OFF -DUSE_FMADD=OFF
-    - name: Build
-      run: cmake --build ${{github.workspace}}/Build/Linux_${{matrix.build_type}} -j $(nproc)
-    - name: Test
-      working-directory: ${{github.workspace}}/Build/Linux_${{matrix.build_type}}
-      run: ctest --output-on-failure --verbose
-
-  linux-clang-use-std-vector:
-    runs-on: ubuntu-latest
-    name: Linux Clang using std::vector
-    strategy:
-        fail-fast: false
-        matrix:
-            build_type: [Debug, ReleaseASAN]
-            double_precision: [Yes]
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v7
-    - name: Install Vulkan
-      run: ${{github.workspace}}/Build/ubuntu24_install_vulkan_sdk.sh
-    - name: Configure CMake
-      working-directory: ${{github.workspace}}/Build
-      run: ./cmake_linux_clang_gcc.sh ${{matrix.build_type}} ${{env.UBUNTU_CLANG_VERSION}} -DDOUBLE_PRECISION=${{matrix.double_precision}} -DUSE_STD_VECTOR=ON
     - name: Build
       run: cmake --build ${{github.workspace}}/Build/Linux_${{matrix.build_type}} -j $(nproc)
     - name: Test
@@ -383,7 +360,7 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v7
     - name: Setup Java
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v6
       with:
         distribution: 'temurin'
         java-version: '17'
