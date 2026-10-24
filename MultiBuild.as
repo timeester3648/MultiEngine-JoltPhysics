@@ -29,6 +29,11 @@ void main(MultiBuild::Workspace& workspace) {
 	}
 
 	{
+		MultiBuild::ScopedFilter _(project, "config.build_config:Debug");
+		properties.defines("JPH_DEBUG");
+	}
+
+	{
 		MultiBuild::ScopedFilter _(project, "!config.build_config:Distribution");
 		properties.defines("JPH_DEBUG_RENDERER");
 	}
