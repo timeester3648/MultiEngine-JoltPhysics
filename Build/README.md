@@ -35,7 +35,7 @@ There are a number of user configurable C++ defines that turn on/off certain fea
 		<li>JPH_EXTERNAL_PROFILE - Turns on the internal profiler but forwards the information to a user defined external system (see Profiler.h). Use JPH_USE_EXTERNAL_PROFILE option to enable this from CMake config.</li>
 		<li>JPH_FLOATING_POINT_EXCEPTIONS_ENABLED - Turns on division by zero and invalid floating point exception support in order to detect bugs (Windows only).</li>
 		<li>JPH_NO_FORCE_INLINE - Don't use force inlining but fall back to a regular 'inline'.</li>
-		<li>JPH_OBJECT_LAYER_BITS - Defines the size of ObjectLayer, must be 16 or 32 bits.</li>
+		<li>JPH_OBJECT_LAYER_BITS - Defines the size of ObjectLayer, must be 16, 32 or 64 bits.</li>
 		<li>JPH_OBJECT_STREAM - Includes the code to serialize physics data in the ObjectStream format (mostly used by the examples).</li>
 		<li>JPH_PROFILE_ENABLED - Turns on the internal profiler.</li>
 		<li>JPH_SHARED_LIBRARY - Use the Jolt library as a shared library. Use JPH_BUILD_SHARED_LIBRARY to build Jolt as a shared library.</li>
@@ -214,6 +214,24 @@ To implement your custom memory allocator override Allocate, Free, Reallocate, A
 * A xmake package is available [here](https://github.com/xmake-io/xmake-repo/tree/dev/packages/j/joltphysics).
 * A conan package is available [here](https://conan.io/center/recipes/joltphysics).
 * A RHEL RPM package is available [here](https://github.com/alkontek/pkgspecs/tree/master/rpm/JoltPhysics).
+
+## Building as a Shared Library
+
+To build Jolt as a shared library, pass `-DJPH_BUILD_SHARED_LIBS=ON` to cmake.
+This will turn on the `JPH_SHARED_LIBRARY` define for Jolt and cmake projects linking against Jolt.
+It turns on `JPH_BUILD_SHARED_LIBRARY` for Jolt only to force it to build a shared library instead of a static library.
+
+If you're not using cmake to build your project, define `JPH_SHARED_LIBRARY` in your project to cause it to bind to the shared library.
+Don't define `JPH_BUILD_SHARED_LIBRARY` in your project.
+
+## Building Your Project Without CMake
+
+When you're not using cmake, be careful to mirror the defines (e.g. `JPH_DOUBLE_PRECISION`, `JPH_DEBUG_RENDERER`, ...) that Jolt was compiled with in your project.
+`RegisterTypes` will attempt to verify this and will `Trace` any mismatches and then call `std::abort`. Make sure you override `Trace` to see the error.
+
+Some mismatches can lead to compile errors because function signatures can change based on the defines (see the Errors section).
+
+If you configured cmake to create a `Makefile` you can find the defines by running `make clean` followed by `make -n`. This will print the compiler command. Search for `-DJPH_` and copy those defines into your own project.
 
 ## Errors
 

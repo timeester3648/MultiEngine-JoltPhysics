@@ -343,6 +343,7 @@ public:
 	BodyCreationSettings	GetBodyCreationSettings() const;
 
 	/// Function to overwrite current body state with inBodyCreationSettings. Can only be done when the body is not in the physics system and cannot add MotionProperties if the body was created without one.
+	/// Note that if you change the shape of the body and this body may have been in contact with other bodies before, you should call BodyInterface::InvalidateContactCache to invalidate any previous contacts.
 	void					ApplyBodyCreationSettings(const BodyCreationSettings &inBodyCreationSettings, const BroadPhaseLayerInterface &inBPLInterface);
 
 	/// Function to convert a soft body back to a body creation settings object to be able to save/recreate the body later. Can e.g. be used to move a body from one PhysicsSystem to another.
@@ -470,7 +471,7 @@ private:
 	// 122 bytes up to here (64-bit mode, single precision, 16-bit ObjectLayer)
 };
 
-static_assert(sizeof(void *) != 8 || JPH_RVECTOR_ALIGNMENT < 16 || sizeof(Body) == JPH_IF_SINGLE_PRECISION_ELSE(128, 160), "Body size is incorrect");
+static_assert(sizeof(void *) != 8 || JPH_RVECTOR_ALIGNMENT < 16 || JPH_OBJECT_LAYER_BITS > 32 || sizeof(Body) == JPH_IF_SINGLE_PRECISION_ELSE(128, 160), "Body size is incorrect");
 static_assert(alignof(Body) == max(JPH_VECTOR_ALIGNMENT, JPH_RVECTOR_ALIGNMENT), "Body should properly align");
 
 JPH_NAMESPACE_END
